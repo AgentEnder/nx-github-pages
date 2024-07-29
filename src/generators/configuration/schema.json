@@ -13,6 +13,22 @@
       "x-dropdown": "projects",
       "x-prompt": "Which project should a target be created for?"
     },
+    "user": {
+      "type": "object",
+      "description": "User information to use when authoring deployment commit",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the user",
+          "default": "GitHub Actions"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email of the user",
+          "default": ""
+        }
+      }
+    },
     "targetName": {
       "type": "string",
       "description": "The name of the target to add.",

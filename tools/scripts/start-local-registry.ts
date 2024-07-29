@@ -19,7 +19,7 @@ export default async () => {
   });
 
   await releaseVersion({
-    specifier: '0.0.0-e2e',
+    specifier: '0.0.0-e2e.1',
     stageChanges: false,
     gitCommit: false,
     gitTag: false,

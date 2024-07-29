@@ -15,6 +15,11 @@
     "sharedGlobals": []
   },
   "targetDefaults": {
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectName}"
+      }
+    },
     "@nx/js:tsc": {
       "cache": true,
       "dependsOn": ["^build"],
@@ -46,7 +51,10 @@
   "release": {
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "npx nx run-many -t build"
+      "preVersionCommand": "nx run-many --target=build",
+      "generatorOptions": {
+        "packageRoot": "dist/{projectName}"
+      }
     },
     "changelog": {
       "workspaceChangelog": {

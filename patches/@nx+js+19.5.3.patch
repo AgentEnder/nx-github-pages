@@ -1,0 +1,19 @@
+diff --git a/node_modules/@nx/js/src/generators/release-version/release-version.js b/node_modules/@nx/js/src/generators/release-version/release-version.js
+index 91e07f6..6a9f70f 100644
+--- a/node_modules/@nx/js/src/generators/release-version/release-version.js
++++ b/node_modules/@nx/js/src/generators/release-version/release-version.js
+@@ -599,10 +599,10 @@ function createResolvePackageRoot(customPackageRoot) {
+         if (!customPackageRoot) {
+             return projectNode.data.root;
+         }
+-        if (projectNode.data.root === '.') {
+-            // TODO This is a temporary workaround to fix NXC-574 until NXC-573 is resolved
+-            return projectNode.data.root;
+-        }
++        // if (projectNode.data.root === '.') {
++        //     // TODO This is a temporary workaround to fix NXC-574 until NXC-573 is resolved
++        //     return projectNode.data.root;
++        // }
+         return (0, utils_1.interpolate)(customPackageRoot, {
+             workspaceRoot: '',
+             projectRoot: projectNode.data.root,

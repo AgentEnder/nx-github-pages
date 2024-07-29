@@ -3,19 +3,13 @@
   "$schema": "node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "src",
   "projectType": "library",
-  "release": {
-    "version": {
-      "generatorOptions": {
-        "packageRoot": "dist/{projectRoot}",
-        "currentVersionResolver": "git-tag"
-      }
-    }
-  },
   "tags": [],
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/nx-github-pages",
         "main": "./src/index.ts",
@@ -46,11 +40,6 @@
         ]
       }
     },
-    "nx-release-publish": {
-      "options": {
-        "packageRoot": "dist/{projectName}"
-      }
-    },
     "local-registry": {
       "executor": "@nx/js:verdaccio",
       "options": {
@@ -73,10 +62,24 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectName}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectName}"
+      ],
       "options": {
         "jestConfig": "jest.config.ts"
       }
+    },
+    "deploy": {
+      "executor": "nx-github-pages:deploy",
+      "options": {
+        "user": {
+          "name": "GitHub Actions",
+          "email": ""
+        }
+      },
+      "dependsOn": [
+        "build"
+      ]
     }
   }
 }

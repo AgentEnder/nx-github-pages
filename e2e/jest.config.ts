@@ -10,4 +10,5 @@ export default {
   globalSetup: '../tools/scripts/start-local-registry.ts',
   globalTeardown: '../tools/scripts/stop-local-registry.ts',
   forceExit: true,
+  runInBand: true,
 };

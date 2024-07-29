@@ -39,7 +39,9 @@ testem.log
 Thumbs.db
 
 # Generated
-/docs-site/docs
+/docs-site/docs/index.md
+/docs-site/docs/changelog.md
+/docs-site/docs/nx-github-pages
 
 .nx/cache
 .nx/workspace-data

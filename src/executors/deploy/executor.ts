@@ -8,6 +8,7 @@ import { DeployExecutorSchema } from './schema';
 import { findDefaultBuildDirectory } from '../../utils/find-default-build-directory';
 import { exec } from '../../utils/exec';
 import { findDefaultRemote } from '../../utils/find-default-remote';
+import { cwd } from 'process';
 
 async function normalizeOptions(
   options: DeployExecutorSchema,
@@ -85,6 +86,42 @@ export default async function deployExecutor(
       `Git repository not found, initializing a blank repository ${directory}`
     );
     await exec('git init', { cwd: directory });
+  }
+
+  if (options.user) {
+    logger.info('Setting up git user');
+    await exec(`git config user.email ${options.user.email}`, {
+      cwd: directory,
+    });
+    await exec(`git config user.name "${options.user.name}"`, {
+      cwd: directory,
+    });
+  } else {
+    const globalUserEmail = await exec('git config user.email', {
+      cwd: directory,
+    });
+    const globalUserName = await exec('git config user.name', {
+      cwd: directory,
+    });
+
+    if (!globalUserEmail || !globalUserName) {
+      if (process.env.GITHUB_ACTIONS === 'true' && process.env.GITHUB_ACTOR) {
+        logger.info('Setting up git user from GITHUB_ACTOR');
+        await exec(
+          `git config user.email ${process.env.GITHUB_ACTOR}@users.noreply.github.com`,
+          {
+            cwd: directory,
+          }
+        );
+        await exec(`git config user.name "${process.env.GITHUB_ACTOR}"`, {
+          cwd: directory,
+        });
+      } else {
+        logger.warn(
+          'No git user found, and no GITHUB_ACTOR found in environment. Skipping setting up git user. This will likely cause an error when committing. Either ensure that the user is set up in the environment, or provide a user in the executor options.'
+        );
+      }
+    }
   }
 
   logger.info('Setting up git remote');

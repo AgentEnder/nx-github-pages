@@ -53,10 +53,10 @@
         ]
       },
       "deploy": {
-        "executor": "nx-gh-pages:deploy",
-        "options": {
-          "dir": "build"
-        }
+        "executor": "nx-github-pages:deploy",
+        "dependsOn": [
+          "build"
+        ]
       }
     }
   }

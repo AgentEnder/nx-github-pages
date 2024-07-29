@@ -48,7 +48,9 @@ export async function configurationGenerator(
 
   const targetDefinition: TargetConfiguration<Partial<DeployExecutorSchema>> = {
     executor: `nx-github-pages:deploy`,
-    options: {},
+    options: {
+      ...(options.user ? { user: options.user } : {}),
+    },
   };
 
   try {

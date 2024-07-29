@@ -29,7 +29,7 @@ describe('nx-github-pages', () => {
     generateReactApp(projectDirectory, 'my-app');
 
     runCommand(
-      'npx nx g nx-github-pages:configuration --project my-app --no-interactive',
+      'npx nx g nx-github-pages:configuration --project my-app --user.name deployment-bot --user.email deployment@testing.com --no-interactive',
       projectDirectory,
       {}
     );
@@ -51,7 +51,7 @@ describe('nx-github-pages', () => {
     generateReactApp(projectDirectory, 'my-app');
     // Create the configuration
     runCommand(
-      'npx nx g nx-github-pages:configuration --project my-app --no-interactive',
+      'npx nx g nx-github-pages:configuration --user.name deployment-bot --user.email deployment@testing.com  --project my-app --no-interactive',
       projectDirectory,
       {}
     );
@@ -63,6 +63,10 @@ describe('nx-github-pages', () => {
       'apps/my-app/project.json',
       (json) => {
         json.targets.deploy.options.syncWithBaseBranch = true;
+        json.targets.deploy.options.syncGitOptions = [
+          '--allow-unrelated-histories',
+          '-s ours',
+        ];
         return json;
       }
     );
