@@ -1,14 +1,21 @@
 {
   "name": "nx-github-pages",
-  "version": "0.0.0-e2e",
+  "version": "0.0.0-e2e.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "documentation": "nx g generate-docs --outputDirectory docs-site/docs"
+  },
+  "workspaces": [
+    ".",
+    "docs-site"
+  ],
   "dependencies": {
     "@nx/devkit": "19.5.3",
-    "tslib": "^2.3.0",
-    "enquirer": "^2.4.1"
+    "enquirer": "^2.4.1",
+    "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@nx-dotnet/nxdoc": "^2.4.0",
     "@nx/eslint": "19.5.3",
     "@nx/eslint-plugin": "19.5.3",
     "@nx/jest": "19.5.3",
