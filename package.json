@@ -1,7 +1,11 @@
 {
   "name": "nx-github-pages",
-  "version": "0.0.0-e2e.0",
+  "version": "1.0.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agentender/nx-github-pages"
+  },
   "scripts": {
     "documentation": "nx g generate-docs --outputDirectory docs-site/docs"
   },
