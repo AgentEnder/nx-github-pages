@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "Configuration",
+  "title": "",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "The project that the target should be added to.",
+      "$default": {
+        "$source": "projectName"
+      },
+      "x-dropdown": "projects",
+      "x-prompt": "Which project should a target be created for?"
+    },
+    "targetName": {
+      "type": "string",
+      "description": "The name of the target to add.",
+      "default": "deploy"
+    }
+  },
+  "required": ["project"]
+}

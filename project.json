@@ -22,6 +22,7 @@
         "tsConfig": "./tsconfig.lib.json",
         "assets": [
           "*.md",
+          "LICENSE",
           {
             "input": "./src",
             "glob": "**/!(*.ts)",
@@ -47,7 +48,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "dist/{projectRoot}"
+        "packageRoot": "dist/{projectName}"
       }
     },
     "local-registry": {
@@ -64,7 +65,9 @@
         "lintFilePatterns": [
           "./src",
           "{projectRoot}/package.json",
-          "./package.json"
+          "./package.json",
+          "executors.json",
+          "generators.json"
         ]
       }
     },

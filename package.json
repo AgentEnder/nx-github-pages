@@ -1,22 +1,20 @@
 {
   "name": "nx-github-pages",
-  "version": "0.0.1",
+  "version": "0.0.0-e2e",
   "license": "MIT",
   "scripts": {},
   "dependencies": {
     "@nx/devkit": "19.5.3",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "enquirer": "^2.4.1"
   },
   "devDependencies": {
     "@nx/eslint": "19.5.3",
     "@nx/eslint-plugin": "19.5.3",
     "@nx/jest": "19.5.3",
     "@nx/js": "19.5.3",
+    "@nx/plugin": "19.5.3",
     "@nx/workspace": "19.5.3",
-    "@swc-node/register": "~1.9.1",
-    "@swc/cli": "~0.3.12",
-    "@swc/core": "~1.5.7",
-    "@swc/helpers": "~0.5.11",
     "@types/jest": "^29.4.0",
     "@types/node": "18.16.9",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
@@ -30,10 +28,11 @@
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.1",
     "typescript": "~5.5.2",
-    "verdaccio": "^5.0.4",
-    "@nx/plugin": "19.5.3"
+    "verdaccio": "^5.0.4"
   },
   "type": "commonjs",
   "main": "./src/index.js",
-  "typings": "./src/index.d.ts"
+  "typings": "./src/index.d.ts",
+  "executors": "./executors.json",
+  "generators": "./generators.json"
 }
