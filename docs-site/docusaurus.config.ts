@@ -7,7 +7,7 @@ import { NxDocPlugin } from './src/plugins/nxdoc';
 
 const config: Config = {
   title: 'Nx Github Pages',
-  tagline: 'Powerful, flexible benchmarking for JavaScript and beyond',
+  tagline: 'A simple Nx plugin to deploy static sites to GitHub Pages',
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
