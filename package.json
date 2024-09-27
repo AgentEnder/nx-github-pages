@@ -41,7 +41,7 @@
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.1",
     "typescript": "~5.5.2",
-    "verdaccio": "^5.0.4"
+    "verdaccio": "^5.32.2"
   },
   "type": "commonjs",
   "main": "./src/index.js",
