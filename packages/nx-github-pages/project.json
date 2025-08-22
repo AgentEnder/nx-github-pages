@@ -18,20 +18,20 @@
           {
             "input": "packages/nx-github-pages/src",
             "glob": "**/!(*.ts)",
-            "output": "packages/nx-github-pages/src"
+            "output": "src"
           },
           {
             "input": "packages/nx-github-pages/src",
             "glob": "**/*.d.ts",
-            "output": "packages/nx-github-pages/src"
+            "output": "src"
           },
           {
-            "input": ".",
+            "input": "packages/nx-github-pages/",
             "glob": "generators.json",
             "output": "."
           },
           {
-            "input": ".",
+            "input": "packages/nx-github-pages/",
             "glob": "executors.json",
             "output": "."
           }
