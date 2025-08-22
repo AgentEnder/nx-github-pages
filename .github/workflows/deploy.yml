@@ -52,7 +52,7 @@ jobs:
 
       - name: Build and release
         run: |
-          node ./node_modules/.bin/nx release --yes
+          npx nx release --yes
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
