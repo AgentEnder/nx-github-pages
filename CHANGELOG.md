@@ -1,3 +1,14 @@
+## 1.1.1 (2025-08-22)
+
+
+### 🩹 Fixes
+
+- **nx-github-pages:** correct build config s.t. executors work ([7ed482c](https://github.com/agentender/nx-github-pages/commit/7ed482c))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.1.0 (2025-08-22)
 
 
