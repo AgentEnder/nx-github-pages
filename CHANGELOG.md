@@ -1,3 +1,13 @@
+## 1.2.0 (2025-08-22)
+
+### 🚀 Features
+
+- bump nx version ([bdd397b](https://github.com/agentender/nx-github-pages/commit/bdd397b))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.1.1 (2025-08-22)
 
 
