@@ -1,0 +1,11 @@
+{
+  // This file is not used in compilation. It is here just for a nice editor experience.
+  "extends": "@docusaurus/tsconfig",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "@docusaurus/module-type-aliases", "@docusaurus/theme-classic", "react"]
+  },
+  "include": ["./src/**/*.ts", "./src/**/*.tsx"]
+}

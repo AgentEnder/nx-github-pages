@@ -1,5 +1,5 @@
 {
-  "name": "nx-github-pages",
+  "name": "@nx-github-pages/source",
   "version": "1.0.0",
   "license": "MIT",
   "repository": {
@@ -7,12 +7,10 @@
     "url": "https://github.com/agentender/nx-github-pages"
   },
   "scripts": {
-    "documentation": "nx g generate-docs --outputDirectory docs-site/docs",
-    "prepare": "patch-package"
+    "documentation": "nx g generate-docs --outputDirectory docs-site/docs"
   },
   "workspaces": [
-    ".",
-    "docs-site"
+    "packages/*"
   ],
   "dependencies": {
     "@nx/devkit": "19.5.3",

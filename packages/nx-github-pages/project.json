@@ -1,31 +1,29 @@
 {
   "name": "nx-github-pages",
-  "$schema": "node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "src",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/nx-github-pages/src",
   "projectType": "library",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/nx-github-pages",
-        "main": "./src/index.ts",
-        "tsConfig": "./tsconfig.lib.json",
+        "main": "packages/nx-github-pages/src/index.ts",
+        "tsConfig": "packages/nx-github-pages/tsconfig.lib.json",
         "assets": [
           "*.md",
           "LICENSE",
           {
-            "input": "./src",
+            "input": "packages/nx-github-pages/src",
             "glob": "**/!(*.ts)",
-            "output": "./src"
+            "output": "packages/nx-github-pages/src"
           },
           {
-            "input": "./src",
+            "input": "packages/nx-github-pages/src",
             "glob": "**/*.d.ts",
-            "output": "./src"
+            "output": "packages/nx-github-pages/src"
           },
           {
             "input": ".",
@@ -52,9 +50,9 @@
       "executor": "@nx/eslint:lint",
       "options": {
         "lintFilePatterns": [
-          "./src",
+          "packages/nx-github-pages/src",
           "{projectRoot}/package.json",
-          "./package.json",
+          "packages/nx-github-pages/package.json",
           "executors.json",
           "generators.json"
         ]
@@ -62,11 +60,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectName}"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/{projectName}"],
       "options": {
-        "jestConfig": "jest.config.ts"
+        "jestConfig": "packages/nx-github-pages/jest.config.ts"
       }
     },
     "deploy": {
@@ -77,9 +73,7 @@
           "email": ""
         }
       },
-      "dependsOn": [
-        "build"
-      ]
+      "dependsOn": ["build"]
     }
   }
 }
