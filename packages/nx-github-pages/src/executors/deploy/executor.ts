@@ -121,6 +121,10 @@ export default async function deployExecutor(
           'No git user found, and no GITHUB_ACTOR found in environment. Skipping setting up git user. This will likely cause an error when committing. Either ensure that the user is set up in the environment, or provide a user in the executor options.'
         );
       }
+    } else {
+      logger.info(
+        `Proceeding using globally configured git identity ${globalUserName}`
+      );
     }
   }
 
