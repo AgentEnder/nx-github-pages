@@ -1,5 +1,5 @@
 {
-  "name": "@nx-github-pages/source",
+  "name": "nx-github-pages",
   "version": "1.0.0",
   "license": "MIT",
   "repository": {

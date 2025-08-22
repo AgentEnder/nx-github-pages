@@ -49,6 +49,7 @@
     }
   },
   "release": {
+    "projects": ["nx-github-pages"],
     "version": {
       "conventionalCommits": true,
       "preVersionCommand": "nx run-many --target=build",
