@@ -13,7 +13,7 @@ const buildContext = (
 describe('findDefaultBuildDirectory', () => {
   it('should throw an error if target project is not found', () => {
     const context = buildContext();
-    expect(() => findDefaultBuildDirectory(context)).toThrowError(
+    expect(() => findDefaultBuildDirectory(context)).toThrow(
       'No target project found. Specify `directory` option manually.'
     );
   });
@@ -23,7 +23,7 @@ describe('findDefaultBuildDirectory', () => {
       projectName: 'my-project',
       projectGraph: { nodes: {}, dependencies: {} },
     });
-    expect(() => findDefaultBuildDirectory(context)).toThrowError(
+    expect(() => findDefaultBuildDirectory(context)).toThrow(
       'Project configuration not found. Specify `directory` option manually.'
     );
   });
@@ -42,7 +42,7 @@ describe('findDefaultBuildDirectory', () => {
         },
       },
     });
-    expect(() => findDefaultBuildDirectory(context)).toThrowError(
+    expect(() => findDefaultBuildDirectory(context)).toThrow(
       'No build configuration found. Specify `directory` option manually.'
     );
   });
@@ -204,7 +204,7 @@ describe('findDefaultBuildDirectory', () => {
         },
       },
     });
-    expect(() => findDefaultBuildDirectory(context)).toThrowError(
+    expect(() => findDefaultBuildDirectory(context)).toThrow(
       'Multiple outputs found. Specify `directory` option manually.'
     );
   });
@@ -232,7 +232,7 @@ describe('findDefaultBuildDirectory', () => {
         },
       },
     });
-    expect(() => findDefaultBuildDirectory(context)).toThrowError(
+    expect(() => findDefaultBuildDirectory(context)).toThrow(
       'Unable to determine output directory. Specify `directory` option manually.'
     );
   });

@@ -53,9 +53,8 @@
     "version": {
       "conventionalCommits": true,
       "preVersionCommand": "nx run-many --target=build",
-      "generatorOptions": {
-        "packageRoot": "dist/{projectName}"
-      }
+      "preserveLocalDependencyProtocols": false,
+      "manifestRootsToUpdate": ["dist/{projectName}"]
     },
     "changelog": {
       "workspaceChangelog": {
