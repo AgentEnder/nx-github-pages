@@ -1,3 +1,18 @@
+## 1.1.0 (2025-08-22)
+
+
+### 🚀 Features
+
+- **nx-github-pages:** allow setting git user info in executor options ([a5de2f9](https://github.com/agentender/nx-github-pages/commit/a5de2f9))
+
+### 🩹 Fixes
+
+- **nx-github-pages:** fixup provenance setup ([13c7014](https://github.com/agentender/nx-github-pages/commit/13c7014))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.0.1 (2025-08-22)
 
 
