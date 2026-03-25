@@ -3,12 +3,13 @@ import { findDefaultBuildDirectory } from './find-default-build-directory';
 
 const buildContext = (
   options: Partial<ExecutorContext> = {}
-): ExecutorContext => ({
-  root: '/root',
-  cwd: '/root',
-  isVerbose: false,
-  ...options,
-});
+): ExecutorContext =>
+  ({
+    root: '/root',
+    cwd: '/root',
+    isVerbose: false,
+    ...options,
+  }) as ExecutorContext;
 
 describe('findDefaultBuildDirectory', () => {
   it('should throw an error if target project is not found', () => {
