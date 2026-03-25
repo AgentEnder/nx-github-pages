@@ -64,5 +64,6 @@
     "git": {
       "commitMessage": "chore(release): release {version} [skip ci]"
     }
-  }
+  },
+  "analytics": true
 }
