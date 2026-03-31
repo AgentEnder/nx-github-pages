@@ -5,6 +5,42 @@ hide_title: true
 sidebar_position: 2
 slug: /changelog
 ---
+## 1.2.0 (2025-08-22)
+
+### 🚀 Features
+
+- bump nx version ([bdd397b](https://github.com/agentender/nx-github-pages/commit/bdd397b))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
+## 1.1.1 (2025-08-22)
+
+
+### 🩹 Fixes
+
+- **nx-github-pages:** correct build config s.t. executors work ([7ed482c](https://github.com/agentender/nx-github-pages/commit/7ed482c))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
+## 1.1.0 (2025-08-22)
+
+
+### 🚀 Features
+
+- **nx-github-pages:** allow setting git user info in executor options ([a5de2f9](https://github.com/agentender/nx-github-pages/commit/a5de2f9))
+
+### 🩹 Fixes
+
+- **nx-github-pages:** fixup provenance setup ([13c7014](https://github.com/agentender/nx-github-pages/commit/13c7014))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.0.1 (2025-08-22)
 
 

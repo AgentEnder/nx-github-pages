@@ -4,7 +4,9 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { ProjectConfiguration, workspaceRoot } from '@nx/devkit';
 
 describe('nx-github-pages', () => {
-  let projectDirectory, remote, remoteDirectory: string;
+  let projectDirectory: string;
+  let remote: string;
+  let remoteDirectory: string;
 
   // The state of the remote matters for some tests so we
   // are going to reinit everything everytime. This is not the most
@@ -26,15 +28,21 @@ describe('nx-github-pages', () => {
   });
 
   it('should deploy to gh-pages branch of remote', () => {
-    generateReactApp(projectDirectory, 'my-app');
+    const appName = 'my-app';
+    const nxProjectName = getNxProjectName(projectDirectory, appName);
+    generateReactApp(projectDirectory, appName);
 
     runCommand(
-      'npx nx g nx-github-pages:configuration --project my-app --user.name deployment-bot --user.email deployment@testing.com --no-interactive',
+      `npx nx g nx-github-pages:configuration --project ${nxProjectName} --user.name deployment-bot --user.email deployment@testing.com --no-interactive`,
       projectDirectory,
       {}
     );
 
-    runCommand('npx nx deploy my-app --no-interactive', projectDirectory, {});
+    runCommand(
+      `npx nx deploy ${nxProjectName} --no-interactive`,
+      projectDirectory,
+      {}
+    );
 
     // Check that the gh-pages branch exists in the remote
     runCommand('git checkout gh-pages', remoteDirectory, {});
@@ -46,32 +54,66 @@ describe('nx-github-pages', () => {
   });
 
   it('should sync via merge sync enabled and deployment already exists', () => {
+    const appName = 'my-app';
+    const nxProjectName = getNxProjectName(projectDirectory, appName);
+
     // SETUP
     // Create a new app
-    generateReactApp(projectDirectory, 'my-app');
+    generateReactApp(projectDirectory, appName);
     // Create the configuration
     runCommand(
-      'npx nx g nx-github-pages:configuration --user.name deployment-bot --user.email deployment@testing.com  --project my-app --no-interactive',
+      `npx nx g nx-github-pages:configuration --user.name deployment-bot --user.email deployment@testing.com --project ${nxProjectName} --no-interactive`,
       projectDirectory,
       {}
     );
     // Initial deployment
-    runCommand('npx nx deploy my-app --no-interactive', projectDirectory, {});
-    // enable sync settings
-    updateJsonFile<ProjectConfiguration>(
+    runCommand(
+      `npx nx deploy ${nxProjectName} --no-interactive`,
       projectDirectory,
-      'apps/my-app/project.json',
-      (json) => {
-        json.targets.deploy.options.syncWithBaseBranch = true;
-        json.targets.deploy.options.syncGitOptions = [
-          '--allow-unrelated-histories',
-          '-s ours',
-        ];
-        return json;
-      }
+      {}
     );
-    // Update the app
-    updateFile(projectDirectory, 'apps/my-app/src/index.html', (content) =>
+    // enable sync settings — Nx 22+ stores project config in package.json under "nx"
+    const projectConfigPath = existsSync(
+      join(projectDirectory, `apps/${appName}/project.json`)
+    )
+      ? `apps/${appName}/project.json`
+      : `apps/${appName}/package.json`;
+    const isPackageJson = projectConfigPath.endsWith('package.json');
+
+    if (isPackageJson) {
+      updateJsonFile<{ nx: ProjectConfiguration }>(
+        projectDirectory,
+        projectConfigPath,
+        (json) => {
+          json.nx.targets.deploy.options.syncWithBaseBranch = true;
+          json.nx.targets.deploy.options.syncGitOptions = [
+            '--allow-unrelated-histories',
+            '-s ours',
+          ];
+          return json;
+        }
+      );
+    } else {
+      updateJsonFile<ProjectConfiguration>(
+        projectDirectory,
+        projectConfigPath,
+        (json) => {
+          json.targets.deploy.options.syncWithBaseBranch = true;
+          json.targets.deploy.options.syncGitOptions = [
+            '--allow-unrelated-histories',
+            '-s ours',
+          ];
+          return json;
+        }
+      );
+    }
+    // Update the app — Nx 22+ with Vite puts index.html at the app root
+    const indexHtmlPath = existsSync(
+      join(projectDirectory, `apps/${appName}/index.html`)
+    )
+      ? `apps/${appName}/index.html`
+      : `apps/${appName}/src/index.html`;
+    updateFile(projectDirectory, indexHtmlPath, (content) =>
       content.replace(
         '<div id="root"></div>',
         '<h1>Updated</h1><div id="root"></div>'
@@ -80,7 +122,11 @@ describe('nx-github-pages', () => {
 
     // TEST
     // Deploy the updated app
-    runCommand('npx nx deploy my-app --no-interactive', projectDirectory, {});
+    runCommand(
+      `npx nx deploy ${nxProjectName} --no-interactive`,
+      projectDirectory,
+      {}
+    );
 
     // ASSERT
     // Check that the gh-pages branch exists in the remote
@@ -112,7 +158,7 @@ function createTestProject(remote: string) {
   });
 
   execSync(
-    `npx --yes create-nx-workspace@latest ${projectName} --preset apps --nxCloud=skip --no-interactive`,
+    `npx --yes create-nx-workspace@latest ${projectName} --preset apps --nxCloud=skip --skipGit --no-interactive`,
     {
       cwd: dirname(projectDirectory),
       stdio: 'inherit',
@@ -215,6 +261,17 @@ function updateJsonFile<T>(
   updateFile(directory, file, (content) => {
     return JSON.stringify(updater(JSON.parse(content)), null, 2);
   });
+}
+
+function getNxProjectName(
+  projectDirectory: string,
+  appName: string
+): string {
+  const pkgJson = JSON.parse(
+    readFileSync(join(projectDirectory, 'package.json'), 'utf-8')
+  );
+  const scopeMatch = (pkgJson.name as string)?.match(/^(@[^/]+)\//);
+  return scopeMatch ? `${scopeMatch[1]}/${appName}` : appName;
 }
 
 function generateReactApp(projectDirectory: string, projectName: string) {
