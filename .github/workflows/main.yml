@@ -20,6 +20,7 @@ jobs:
 
       - name: Bump NPM
         run: |
+          npm i -g npm@10
           npm i -g npm@11
 
       - name: Install dependencies
