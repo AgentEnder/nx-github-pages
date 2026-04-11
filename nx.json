@@ -52,7 +52,7 @@
     "projects": ["nx-github-pages"],
     "version": {
       "conventionalCommits": true,
-      "preVersionCommand": "nx run-many --target=build",
+      "preVersionCommand": "nx run-many --target=build --projects=nx-github-pages",
       "preserveLocalDependencyProtocols": false,
       "manifestRootsToUpdate": ["dist/{projectName}"]
     },
