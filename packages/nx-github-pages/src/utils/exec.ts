@@ -25,6 +25,10 @@ export async function exec(
       childProcess.stderr?.pipe(process.stderr);
     }
 
+    childProcess.on('error', (err) => {
+      reject(err);
+    });
+
     childProcess.on('close', (code) => {
       if (code !== 0) {
         reject(
