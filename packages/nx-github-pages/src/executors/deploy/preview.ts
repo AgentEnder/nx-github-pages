@@ -9,6 +9,7 @@ import {
   parseOwnerRepoFromRemote,
 } from '../../utils/github-context';
 import { upsertPreviewComment } from '../../utils/preview-comment';
+import { assertBaseUrlInBundle } from '../../utils/verify-base-url';
 import { DeployExecutorSchema, PreviewOptions } from './schema';
 
 export interface NormalizedDeployOptions
@@ -89,6 +90,10 @@ export async function deployPreview(
   logger.info(
     `Preview deploy: pushing to ${remote}@${baseBranch} under '${pathPrefix}'`
   );
+
+  // Fail fast if the built bundle doesn't reference the preview path prefix.
+  // Without a matching BASE_URL, every asset 404s after deployment.
+  assertBaseUrlInBundle(sourceDirectory, pathPrefix);
 
   const scratch = mkdtempSync(join(tmpdir(), 'nx-ghp-preview-'));
   try {
