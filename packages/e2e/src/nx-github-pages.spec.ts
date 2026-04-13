@@ -53,6 +53,107 @@ describe('nx-github-pages', () => {
     checkFilesExist(remoteDirectory, ['index.html']);
   });
 
+  it('should deploy a preview into a pr/<id> subdirectory and be cleaned up', () => {
+    const appName = 'my-app';
+    generateReactApp(projectDirectory, appName);
+    const nxProjectName = getNxProjectName(projectDirectory, appName);
+
+    // Patch the generated Vite config so `base` reads from a BASE_URL env
+    // var at build time. This is how consumers wire the preview path prefix
+    // into their framework, and it lets the plugin's base URL check find
+    // "/pr/42/" references in the actual built output.
+    patchViteConfigWithBaseUrl(projectDirectory, appName);
+
+    runCommand(
+      `npx nx g nx-github-pages:configuration --project ${nxProjectName} --preview --previewUrl https://example.github.io/test --addCleanupTarget --user.name deployment-bot --user.email deployment@testing.com --no-interactive`,
+      projectDirectory,
+      {}
+    );
+
+    const previewEnv = {
+      PR_NUMBER: '42',
+      GITHUB_SHA: 'deadbeefcafebabe1234567890abcdef12345678',
+      GITHUB_REPOSITORY: 'agentender/test-repo',
+      BASE_URL: '/pr/42/',
+    };
+
+    runCommand(
+      `npx nx deploy ${nxProjectName} -c preview --no-interactive`,
+      projectDirectory,
+      { env: { ...process.env, ...previewEnv } }
+    );
+
+    // Assert the preview landed in pr/42 on the gh-pages branch.
+    runCommand('git checkout gh-pages', remoteDirectory, {});
+    checkFilesExist(remoteDirectory, ['pr/42/index.html']);
+    // And that the built index.html actually carries the preview base URL —
+    // this is what the plugin's base URL safeguard is enforcing.
+    expect(
+      readFileSync(join(remoteDirectory, 'pr/42/index.html'), 'utf-8')
+    ).toContain('/pr/42/');
+
+    // Now run cleanup --all and verify the pr/42 directory is removed.
+    runCommand(
+      `npx nx run ${nxProjectName}:cleanup-previews --all --no-interactive`,
+      projectDirectory,
+      { env: { ...process.env, ...previewEnv } }
+    );
+
+    runCommand('git checkout gh-pages', remoteDirectory, {});
+    runCommand('git pull --ff-only origin gh-pages', remoteDirectory, {});
+    expect(existsSync(join(remoteDirectory, 'pr/42/index.html'))).toBe(false);
+  });
+
+  it('should fail the preview deploy when the build output lacks the path prefix', () => {
+    const appName = 'my-app';
+    generateReactApp(projectDirectory, appName);
+    const nxProjectName = getNxProjectName(projectDirectory, appName);
+
+    runCommand(
+      `npx nx g nx-github-pages:configuration --project ${nxProjectName} --preview --user.name deployment-bot --user.email deployment@testing.com --no-interactive`,
+      projectDirectory,
+      {}
+    );
+
+    const previewEnv = {
+      PR_NUMBER: '7',
+      GITHUB_SHA: 'abcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      GITHUB_REPOSITORY: 'agentender/test-repo',
+    };
+
+    let caught: { status: number; stderr: string; stdout: string } | null =
+      null;
+    try {
+      execSync(
+        `npx nx deploy ${nxProjectName} -c preview --no-interactive`,
+        {
+          cwd: projectDirectory,
+          stdio: 'pipe',
+          env: { ...process.env, ...previewEnv },
+        }
+      );
+    } catch (err) {
+      const e = err as {
+        status: number;
+        stderr: Buffer;
+        stdout: Buffer;
+      };
+      caught = {
+        status: e.status,
+        stderr: e.stderr?.toString() ?? '',
+        stdout: e.stdout?.toString() ?? '',
+      };
+    }
+
+    if (!caught) {
+      throw new Error('Expected preview deploy to fail, but it succeeded.');
+    }
+    expect(caught.status).not.toBe(0);
+    const combined = caught.stderr + caught.stdout;
+    expect(combined).toMatch(/base URL check failed/i);
+    expect(combined).toMatch(/NX_GITHUB_PAGES_SKIP_BASE_URL_CHECK/);
+  });
+
   it('should sync via merge sync enabled and deployment already exists', () => {
     const appName = 'my-app';
 
@@ -282,6 +383,48 @@ function getNxProjectName(
   }
 
   return appName;
+}
+
+/**
+ * Patch the Vite config of a freshly generated @nx/react app so the `base`
+ * option is read from `process.env.BASE_URL` at build time. The plugin's
+ * base URL check then has something real to find in the build output when
+ * we run a preview deploy.
+ *
+ * Handles both the function-form `defineConfig(() => ({...}))` and the
+ * object-form `defineConfig({...})` that different Nx versions emit.
+ */
+function patchViteConfigWithBaseUrl(
+  projectDirectory: string,
+  appName: string
+): void {
+  const candidates = [
+    `apps/${appName}/vite.config.ts`,
+    `apps/${appName}/vite.config.mts`,
+    `apps/${appName}/vite.config.js`,
+  ];
+  const configPath = candidates.find((p) =>
+    existsSync(join(projectDirectory, p))
+  );
+  if (!configPath) {
+    throw new Error(
+      `Could not find a vite.config file under apps/${appName} — tried: ${candidates.join(', ')}`
+    );
+  }
+
+  updateFile(projectDirectory, configPath, (content) => {
+    // `root: __dirname` is a stable landmark emitted by every recent
+    // @nx/react Vite config generator. Insert `base` immediately before it.
+    if (!content.includes('root: __dirname')) {
+      throw new Error(
+        `Unexpected vite.config shape — 'root: __dirname' not found in ${configPath}`
+      );
+    }
+    return content.replace(
+      'root: __dirname',
+      `base: process.env.BASE_URL ?? '/',\n  root: __dirname`
+    );
+  });
 }
 
 function generateReactApp(projectDirectory: string, projectName: string) {
