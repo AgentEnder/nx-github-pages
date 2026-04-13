@@ -413,16 +413,20 @@ function patchViteConfigWithBaseUrl(
   }
 
   updateFile(projectDirectory, configPath, (content) => {
-    // `root: __dirname` is a stable landmark emitted by every recent
-    // @nx/react Vite config generator. Insert `base` immediately before it.
-    if (!content.includes('root: __dirname')) {
+    // The `root:` field is a stable landmark emitted by every recent
+    // @nx/react Vite config generator. Its value is either `__dirname`
+    // (older CJS templates) or `import.meta.dirname` (newer ESM templates).
+    // Insert `base` immediately before it.
+    const rootLine = /^(\s*)root:\s*(?:__dirname|import\.meta\.dirname),/m;
+    if (!rootLine.test(content)) {
       throw new Error(
-        `Unexpected vite.config shape — 'root: __dirname' not found in ${configPath}`
+        `Unexpected vite.config shape — no 'root:' landmark found in ${configPath}`
       );
     }
     return content.replace(
-      'root: __dirname',
-      `base: process.env.BASE_URL ?? '/',\n  root: __dirname`
+      rootLine,
+      (match, indent) =>
+        `${indent}base: process.env.BASE_URL ?? '/',\n${match}`
     );
   });
 }
