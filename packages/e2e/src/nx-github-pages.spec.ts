@@ -93,14 +93,15 @@ describe('nx-github-pages', () => {
     ).toContain('/pr/42/');
 
     // Now run cleanup --all and verify the pr/42 directory is removed.
+    // The remote is configured with `receive.denyCurrentBranch=updateInstead`,
+    // so the cleanup push refreshes the remote's work tree in place — we can
+    // read the file state directly without another checkout.
     runCommand(
       `npx nx run ${nxProjectName}:cleanup-previews --all --no-interactive`,
       projectDirectory,
       { env: { ...process.env, ...previewEnv } }
     );
 
-    runCommand('git checkout gh-pages', remoteDirectory, {});
-    runCommand('git pull --ff-only origin gh-pages', remoteDirectory, {});
     expect(existsSync(join(remoteDirectory, 'pr/42/index.html'))).toBe(false);
   });
 
@@ -287,6 +288,16 @@ function createTestRemote() {
   });
 
   execSync('git init', {
+    cwd: remoteDirectory,
+    stdio: 'inherit',
+  });
+
+  // The test remote is a non-bare repo. When a test checks out `gh-pages` in
+  // the work tree (to assert deployed files exist) and then a subsequent step
+  // pushes back to `gh-pages` on the same remote, git refuses by default with
+  // `denyCurrentBranch`. `updateInstead` lets the push succeed and also
+  // refreshes the work tree so later assertions see the latest state.
+  execSync('git config receive.denyCurrentBranch updateInstead', {
     cwd: remoteDirectory,
     stdio: 'inherit',
   });
