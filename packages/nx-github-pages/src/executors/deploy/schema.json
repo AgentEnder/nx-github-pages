@@ -51,6 +51,32 @@
       "type": "string",
       "description": "Custom domain to use for the gh-pages branch. Applied by creating a CNAME file in the root of the gh-pages branch"
     },
+    "preview": {
+      "description": "When set to an object, deploys the build output into a subdirectory of the target branch (instead of replacing it) and optionally comments on the associated pull request. Set to `false` (the default) for a standard deploy.",
+      "default": false,
+      "oneOf": [
+        { "const": false },
+        {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "Base URL where the preview will be available. Used in the PR comment. If omitted, derived from the `CNAME` option or the GitHub Pages default domain for the target remote."
+            },
+            "pathPrefix": {
+              "type": "string",
+              "description": "Subdirectory within the target branch to deploy into. Defaults to `pr/${PR_NUMBER}` (or `pr/${GITHUB_SHA}` if no PR number is available)."
+            },
+            "comment": {
+              "type": "boolean",
+              "description": "Whether to upsert a comment on the pull request with the preview URL. Requires a PR context and a `GH_TOKEN`/`GITHUB_TOKEN` with `pull-requests: write`.",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "user": {
       "type": "object",
       "description": "User information to use when authoring deployment commit",

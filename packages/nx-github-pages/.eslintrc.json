@@ -23,7 +23,12 @@
         "@nx/dependency-checks": [
           "error",
           {
-            "ignoredDependencies": ["@nx/jest", "@nx/js", "nx"]
+            "ignoredDependencies": [
+              "@nx/jest",
+              "@nx/js",
+              "nx",
+              "@octokit/rest"
+            ]
           }
         ]
       }

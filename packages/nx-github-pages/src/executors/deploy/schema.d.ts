@@ -8,8 +8,15 @@ export interface DeployExecutorSchema {
   syncStrategy: 'rebase' | 'merge';
   syncGitOptions: string[];
   CNAME?: string;
+  preview?: false | PreviewOptions;
   user?: {
     email: string;
     name: string;
   };
+}
+
+export interface PreviewOptions {
+  url?: string;
+  pathPrefix?: string;
+  comment?: boolean;
 }

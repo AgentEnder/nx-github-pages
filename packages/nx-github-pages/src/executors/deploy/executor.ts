@@ -4,11 +4,11 @@ import { stat, writeFileSync } from 'fs';
 import { join } from 'path';
 
 import { DeployExecutorSchema } from './schema';
+import { deployPreview } from './preview';
 
 import { findDefaultBuildDirectory } from '../../utils/find-default-build-directory';
 import { exec } from '../../utils/exec';
 import { findDefaultRemote } from '../../utils/find-default-remote';
-import { cwd } from 'process';
 
 async function normalizeOptions(
   options: DeployExecutorSchema,
@@ -74,6 +74,19 @@ export default async function deployExecutor(
     return {
       success: false,
     };
+  }
+
+  if (options.preview) {
+    try {
+      return await deployPreview(options.preview, options, directory);
+    } catch (err) {
+      logger.error(
+        `Preview deploy failed: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+      return { success: false };
+    }
   }
 
   if (options.CNAME) {
