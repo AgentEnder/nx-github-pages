@@ -33,6 +33,20 @@
       "type": "string",
       "description": "The name of the target to add.",
       "default": "deploy"
+    },
+    "preview": {
+      "type": "boolean",
+      "description": "Add a `preview` configuration to the deploy target that deploys into a PR subdirectory and comments on the pull request.",
+      "default": false
+    },
+    "previewUrl": {
+      "type": "string",
+      "description": "Base URL where previews will be hosted (used to build the PR comment link). Only applied when `preview` is true."
+    },
+    "addCleanupTarget": {
+      "type": "boolean",
+      "description": "Also add a `cleanup-previews` target that removes stale PR preview deployments.",
+      "default": false
     }
   },
   "required": ["project"]
