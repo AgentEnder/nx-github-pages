@@ -29,8 +29,8 @@ describe('nx-github-pages', () => {
 
   it('should deploy to gh-pages branch of remote', () => {
     const appName = 'my-app';
-    const nxProjectName = getNxProjectName(projectDirectory, appName);
     generateReactApp(projectDirectory, appName);
+    const nxProjectName = getNxProjectName(projectDirectory, appName);
 
     runCommand(
       `npx nx g nx-github-pages:configuration --project ${nxProjectName} --user.name deployment-bot --user.email deployment@testing.com --no-interactive`,
@@ -55,11 +55,11 @@ describe('nx-github-pages', () => {
 
   it('should sync via merge sync enabled and deployment already exists', () => {
     const appName = 'my-app';
-    const nxProjectName = getNxProjectName(projectDirectory, appName);
 
     // SETUP
     // Create a new app
     generateReactApp(projectDirectory, appName);
+    const nxProjectName = getNxProjectName(projectDirectory, appName);
     // Create the configuration
     runCommand(
       `npx nx g nx-github-pages:configuration --user.name deployment-bot --user.email deployment@testing.com --project ${nxProjectName} --no-interactive`,
@@ -267,11 +267,21 @@ function getNxProjectName(
   projectDirectory: string,
   appName: string
 ): string {
-  const pkgJson = JSON.parse(
-    readFileSync(join(projectDirectory, 'package.json'), 'utf-8')
-  );
-  const scopeMatch = (pkgJson.name as string)?.match(/^(@[^/]+)\//);
-  return scopeMatch ? `${scopeMatch[1]}/${appName}` : appName;
+  const appPackageJson = join(projectDirectory, `apps/${appName}/package.json`);
+  if (existsSync(appPackageJson)) {
+    const name = JSON.parse(readFileSync(appPackageJson, 'utf-8'))
+      .name as string | undefined;
+    if (name) return name;
+  }
+
+  const appProjectJson = join(projectDirectory, `apps/${appName}/project.json`);
+  if (existsSync(appProjectJson)) {
+    const name = JSON.parse(readFileSync(appProjectJson, 'utf-8'))
+      .name as string | undefined;
+    if (name) return name;
+  }
+
+  return appName;
 }
 
 function generateReactApp(projectDirectory: string, projectName: string) {
