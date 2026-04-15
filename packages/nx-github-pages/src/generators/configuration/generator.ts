@@ -53,6 +53,18 @@ export async function configurationGenerator(
     },
   };
 
+  if (options.preview) {
+    targetDefinition.configurations = {
+      ...targetDefinition.configurations,
+      preview: {
+        preview: {
+          ...(options.previewUrl ? { url: options.previewUrl } : {}),
+        },
+        syncWithBaseBranch: true,
+      },
+    };
+  }
+
   try {
     findDefaultBuildDirectory({
       projectName: options.project,
@@ -88,11 +100,20 @@ export async function configurationGenerator(
     }).then((answer) => answer.remote);
   }
 
+  const extraTargets: Record<string, TargetConfiguration> = {};
+  if (options.addCleanupTarget) {
+    extraTargets['cleanup-previews'] = {
+      executor: 'nx-github-pages:cleanup-preview',
+      options: {},
+    };
+  }
+
   if (!onDisk) {
     addProjectConfiguration(tree, options.project, {
       root: project.root,
       targets: {
         [options.targetName]: targetDefinition,
+        ...extraTargets,
       },
     });
   } else {
@@ -101,6 +122,7 @@ export async function configurationGenerator(
       targets: {
         ...project.targets,
         [options.targetName]: targetDefinition,
+        ...extraTargets,
       },
     });
   }

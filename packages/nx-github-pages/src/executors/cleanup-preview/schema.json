@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "$schema": "http://json-schema.org/schema",
+  "title": "Cleanup Preview Deployments",
+  "description": "Remove old preview deployments from the target gh-pages branch and update the associated PR comments.",
+  "type": "object",
+  "properties": {
+    "remote": {
+      "type": "string",
+      "description": "URL for the git remote containing the preview deployments. Defaults to the project's origin remote."
+    },
+    "remoteName": {
+      "type": "string",
+      "description": "Name of the remote to push to",
+      "default": "origin"
+    },
+    "baseBranch": {
+      "type": "string",
+      "description": "Branch that hosts the deployed site",
+      "default": "gh-pages"
+    },
+    "pathPrefix": {
+      "type": "string",
+      "description": "Top-level directory on the deployment branch that contains per-PR subdirectories",
+      "default": "pr"
+    },
+    "maxAgeDays": {
+      "type": "number",
+      "description": "Delete preview directories whose most recent commit is older than this many days",
+      "default": 7
+    },
+    "all": {
+      "type": "boolean",
+      "description": "Delete every preview directory regardless of age",
+      "default": false
+    },
+    "updatePrComments": {
+      "type": "boolean",
+      "description": "Update the preview deployment PR comment for each cleaned directory",
+      "default": true
+    },
+    "commitMessage": {
+      "type": "string",
+      "description": "Commit message used for the cleanup commit",
+      "default": "chore: cleanup old preview deployments [skip ci]"
+    },
+    "user": {
+      "type": "object",
+      "description": "User information used when authoring the cleanup commit",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" }
+      }
+    }
+  },
+  "required": []
+}

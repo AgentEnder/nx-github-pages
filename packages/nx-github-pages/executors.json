@@ -4,6 +4,11 @@
       "implementation": "./src/executors/deploy/executor",
       "schema": "./src/executors/deploy/schema.json",
       "description": "deploy executor"
+    },
+    "cleanup-preview": {
+      "implementation": "./src/executors/cleanup-preview/executor",
+      "schema": "./src/executors/cleanup-preview/schema.json",
+      "description": "Remove stale PR preview deployments from the gh-pages branch"
     }
   }
 }

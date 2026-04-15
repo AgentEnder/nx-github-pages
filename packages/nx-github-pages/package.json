@@ -17,6 +17,14 @@
     "enquirer": "^2.4.1",
     "tslib": "^2.3.0"
   },
+  "peerDependencies": {
+    "@octokit/rest": "^21.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@octokit/rest": {
+      "optional": true
+    }
+  },
   "devDependencies": {},
   "type": "commonjs",
   "main": "./src/index.js",
