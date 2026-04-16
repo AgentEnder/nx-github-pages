@@ -112,10 +112,12 @@ export default async function deployExecutor(
   } else {
     const globalUserEmail = await exec('git config user.email', {
       cwd: directory,
-    });
+      stdio: 'ignore',
+    }).catch(() => '');
     const globalUserName = await exec('git config user.name', {
       cwd: directory,
-    });
+      stdio: 'ignore',
+    }).catch(() => '');
 
     if (!globalUserEmail || !globalUserName) {
       if (process.env.GITHUB_ACTIONS === 'true' && process.env.GITHUB_ACTOR) {
