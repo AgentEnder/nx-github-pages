@@ -18,6 +18,11 @@ jest.mock('@nx/devkit', () => ({
             root: 'apps/test',
           },
         },
+        '@org/app': {
+          data: {
+            root: 'apps/app',
+          },
+        },
       },
     };
   }),
@@ -37,9 +42,49 @@ describe('configuration generator', () => {
     });
   });
 
-  it('should run successfully', async () => {
+  it('adds the deploy target to a project.json-backed project', async () => {
     await configurationGenerator(tree, options);
     const config = readProjectConfiguration(tree, 'test');
-    expect(config).toBeDefined();
+    expect(config.targets?.deploy).toEqual(
+      expect.objectContaining({ executor: 'nx-github-pages:deploy' })
+    );
+  });
+
+  it('adds the deploy target to a package.json-inferred project (Nx 22+)', async () => {
+    // Simulate an app whose project config lives in package.json (no project.json).
+    tree.write(
+      'apps/app/package.json',
+      JSON.stringify({ name: '@org/app', nx: {} }, null, 2)
+    );
+
+    await configurationGenerator(tree, {
+      project: '@org/app',
+      targetName: 'deploy',
+    });
+
+    // The target must be present on the read-back configuration — regardless of
+    // whether it landed in project.json or package.json's nx block, `nx deploy
+    // @org/app` needs to resolve it.
+    const config = readProjectConfiguration(tree, '@org/app');
+    expect(config.targets?.deploy).toEqual(
+      expect.objectContaining({ executor: 'nx-github-pages:deploy' })
+    );
+
+    // And it should not have stomped the project.json/package.json of a
+    // project with a similar directory-derived name.
+    expect(tree.exists('apps/app/project.json')).toBe(false);
+    const pkg = JSON.parse(tree.read('apps/app/package.json', 'utf-8') ?? '{}');
+    expect(pkg.nx?.targets?.deploy?.executor).toBe('nx-github-pages:deploy');
+  });
+
+  it('adds a cleanup-previews target when addCleanupTarget is passed', async () => {
+    await configurationGenerator(tree, {
+      ...options,
+      addCleanupTarget: true,
+    });
+    const config = readProjectConfiguration(tree, 'test');
+    expect(config.targets?.['cleanup-previews']).toEqual(
+      expect.objectContaining({ executor: 'nx-github-pages:cleanup-preview' })
+    );
   });
 });

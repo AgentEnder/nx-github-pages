@@ -1,7 +1,5 @@
 import {
-  addProjectConfiguration,
   createProjectGraphAsync,
-  ProjectGraph,
   readProjectConfiguration,
   TargetConfiguration,
   Tree,
@@ -16,35 +14,16 @@ import { findDefaultRemote } from '../../utils/find-default-remote';
 
 import { ConfigurationGeneratorSchema } from './schema';
 
-async function getProjectConfiguration(
-  project: string,
-  tree: Tree,
-  graph: ProjectGraph
-) {
-  try {
-    return { onDisk: true, project: readProjectConfiguration(tree, project) };
-  } catch {
-    // continue
-  }
-
-  const projectNode = graph.nodes[project];
-  if (!projectNode) {
-    throw new Error(`Project configuration not found for ${project}`);
-  }
-  return { onDisk: false, project: projectNode.data };
-}
-
 export async function configurationGenerator(
   tree: Tree,
   options: ConfigurationGeneratorSchema
 ) {
   const graph = await createProjectGraphAsync();
 
-  const { onDisk, project } = await getProjectConfiguration(
-    options.project,
-    tree,
-    graph
-  );
+  // readProjectConfiguration works for both project.json-backed projects and
+  // package.json-inferred ones (Nx 22+); updateProjectConfiguration writes
+  // back to whichever file the project is defined in.
+  const project = readProjectConfiguration(tree, options.project);
 
   const targetDefinition: TargetConfiguration<Partial<DeployExecutorSchema>> = {
     executor: `nx-github-pages:deploy`,
@@ -104,24 +83,14 @@ export async function configurationGenerator(
     };
   }
 
-  if (!onDisk) {
-    addProjectConfiguration(tree, options.project, {
-      root: project.root,
-      targets: {
-        [options.targetName]: targetDefinition,
-        ...extraTargets,
-      },
-    });
-  } else {
-    updateProjectConfiguration(tree, options.project, {
-      ...project,
-      targets: {
-        ...project.targets,
-        [options.targetName]: targetDefinition,
-        ...extraTargets,
-      },
-    });
-  }
+  updateProjectConfiguration(tree, options.project, {
+    ...project,
+    targets: {
+      ...project.targets,
+      [options.targetName]: targetDefinition,
+      ...extraTargets,
+    },
+  });
 }
 
 export default configurationGenerator;
