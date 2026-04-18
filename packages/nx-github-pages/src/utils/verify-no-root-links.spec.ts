@@ -58,22 +58,24 @@ describe('verify-no-root-links', () => {
     ]);
   });
 
-  it('respects multi-segment base paths (custom domain + repo prefix)', () => {
+  it('accepts any of multiple acceptable base paths', () => {
     writeFileSync(
       join(dir, 'index.html'),
       [
-        '<link rel="icon" href="/nx-github-pages/pr/9/img/favicon.ico">',
-        '<script src="/nx-github-pages/pr/9/assets/main.js"></script>',
+        // bare pathPrefix layout (CNAME)
+        '<link rel="icon" href="/pr/42/img/favicon.ico">',
+        // repo-prefixed layout (default github.io)
+        '<script src="/my-repo/pr/42/assets/main.js"></script>',
+        // not in either → offense
         '<a href="/docs/intro">bad</a>',
-        '<a href="/nx-github-pages/docs/intro">also bad (wrong prefix)</a>',
       ].join('\n')
     );
 
-    const offenses = findRootLinksOutsideBase(dir, '/nx-github-pages/pr/9');
-    expect(offenses.map((o) => o.url)).toEqual([
-      '/docs/intro',
-      '/nx-github-pages/docs/intro',
+    const offenses = findRootLinksOutsideBase(dir, [
+      '/pr/42',
+      '/my-repo/pr/42',
     ]);
+    expect(offenses.map((o) => o.url)).toEqual(['/docs/intro']);
   });
 
   it('treats a rooted link exactly equal to the base as in-scope', () => {
@@ -116,26 +118,25 @@ describe('verify-no-root-links', () => {
     ]);
   });
 
-  it('is a no-op when the base path is the site root', () => {
+  it('is a no-op when all supplied base paths reduce to "/"', () => {
     writeFileSync(join(dir, 'index.html'), '<a href="/anything">a</a>');
     expect(findRootLinksOutsideBase(dir, '/')).toEqual([]);
+    expect(findRootLinksOutsideBase(dir, ['/', ''])).toEqual([]);
     expect(() => assertNoRootLinksOutsideBase(dir, '/')).not.toThrow();
   });
 
-  it('throws a descriptive error referencing the skip env var', () => {
+  it('throws a descriptive error listing all accepted bases', () => {
     writeFileSync(
       join(dir, 'index.html'),
       '<link rel="icon" href="/favicon.ico">'
     );
-    expect(() => assertNoRootLinksOutsideBase(dir, '/pr/42')).toThrow(
-      /base URL check failed/i
-    );
-    expect(() => assertNoRootLinksOutsideBase(dir, '/pr/42')).toThrow(
-      /favicon\.ico/
-    );
-    expect(() => assertNoRootLinksOutsideBase(dir, '/pr/42')).toThrow(
-      new RegExp(SKIP_ENV_VAR)
-    );
+    const assertion = () =>
+      assertNoRootLinksOutsideBase(dir, ['/pr/42', '/my-repo/pr/42']);
+    expect(assertion).toThrow(/base URL check failed/i);
+    expect(assertion).toThrow(/favicon\.ico/);
+    expect(assertion).toThrow(/\/pr\/42\//);
+    expect(assertion).toThrow(/\/my-repo\/pr\/42\//);
+    expect(assertion).toThrow(new RegExp(SKIP_ENV_VAR));
   });
 
   it(`skips the check when ${SKIP_ENV_VAR}=true`, () => {

@@ -57,11 +57,11 @@
       "properties": {
         "url": {
           "type": "string",
-          "description": "Base URL where the preview will be available. Used in the PR comment. If omitted, derived from the `CNAME` option or the GitHub Pages default domain for the target remote."
+          "description": "Base URL where the preview will be available. Supports `{prNumber}`, `{shortSha}`, and `{sha}` placeholders. If the value contains any placeholder it's treated as the full preview URL; otherwise `pathPrefix` is appended to it. If omitted entirely, the URL is derived from the `CNAME` option or the default GitHub Pages domain for the target remote."
         },
         "pathPrefix": {
           "type": "string",
-          "description": "Subdirectory within the target branch to deploy into. Defaults to `pr/${PR_NUMBER}` (or `pr/${GITHUB_SHA}` if no PR number is available)."
+          "description": "Subdirectory within the target branch to deploy into. Supports `{prNumber}`, `{shortSha}`, and `{sha}` placeholders. Defaults to `pr/<PR number>` (or `pr/<commit SHA>` if no PR number is available)."
         },
         "comment": {
           "type": "boolean",

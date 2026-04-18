@@ -59,14 +59,19 @@ export function normalizeBasePath(basePath: string): string {
   return trimmed ? `/${trimmed}` : '/';
 }
 
+function toBaseList(input: string | string[]): string[] {
+  const arr = Array.isArray(input) ? input : [input];
+  return Array.from(new Set(arr.map(normalizeBasePath))).filter((b) => b !== '/');
+}
+
 export function findRootLinksOutsideBase(
   directory: string,
-  basePath: string
+  basePath: string | string[]
 ): RootLinkOffense[] {
-  const base = normalizeBasePath(basePath);
+  const bases = toBaseList(basePath);
   // A base of "/" means the site is served from the domain root; every
   // rooted link is by definition within it, so nothing to flag.
-  if (base === '/') return [];
+  if (bases.length === 0) return [];
 
   const offenses: RootLinkOffense[] = [];
   let scanned = 0;
@@ -83,8 +88,11 @@ export function findRootLinksOutsideBase(
       if (!value.startsWith('/')) continue;
       // protocol-relative (`//cdn.example.com/...`) is not a root-path link.
       if (value.startsWith('//')) continue;
-      // Rooted and within the expected base — fine.
-      if (value === base || value.startsWith(`${base}/`)) continue;
+      // Rooted and within any of the accepted bases — fine.
+      const inBase = bases.some(
+        (base) => value === base || value.startsWith(`${base}/`)
+      );
+      if (inBase) continue;
       offenses.push({
         file: relative(directory, file) || file,
         attribute,
@@ -97,7 +105,7 @@ export function findRootLinksOutsideBase(
 
 export function assertNoRootLinksOutsideBase(
   directory: string,
-  basePath: string
+  basePath: string | string[]
 ): void {
   if (process.env[SKIP_ENV_VAR] === 'true') {
     logger.warn(
@@ -109,7 +117,8 @@ export function assertNoRootLinksOutsideBase(
   const offenses = findRootLinksOutsideBase(directory, basePath);
   if (offenses.length === 0) return;
 
-  const base = normalizeBasePath(basePath);
+  const bases = toBaseList(basePath);
+  const basesList = bases.map((b) => `"${b}/"`).join(' or ');
   const sample = offenses.slice(0, MAX_REPORTED);
   const list = sample
     .map((o) => `  - ${o.file}: ${o.attribute}="${o.url}"`)
@@ -124,14 +133,15 @@ export function assertNoRootLinksOutsideBase(
       `Preview deploy base URL check failed.`,
       ``,
       `Found ${offenses.length} link(s) in the build output that target the site root`,
-      `instead of the preview base "${base}/". Those links will 404 once the preview is`,
-      `deployed to a subdirectory.`,
+      `instead of ${basesList}. Those links will 404 once the preview is deployed`,
+      `to a subdirectory.`,
       ``,
       `Examples:`,
       list + extra,
       ``,
-      `Fix: rebuild with your framework's base URL set to "${base}/" so emitted links`,
-      `include the prefix. To bypass this check (not recommended) set ${SKIP_ENV_VAR}=true.`,
+      `Fix: rebuild with your framework's base URL set to one of the accepted paths`,
+      `so emitted links include the prefix. To bypass this check (not recommended) set`,
+      `${SKIP_ENV_VAR}=true.`,
     ].join('\n')
   );
 }
