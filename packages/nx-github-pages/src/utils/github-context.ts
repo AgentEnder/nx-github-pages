@@ -5,6 +5,20 @@ export interface GitHubContext {
   sha?: string;
 }
 
+export function getPullRequestNumber(): number | undefined {
+  const refMatch = (process.env.GITHUB_REF ?? '').match(/^refs\/pull\/(\d+)\//);
+  if (refMatch) {
+    return Number(refMatch[1]);
+  }
+  if (process.env.PR_NUMBER) {
+    const parsed = Number(process.env.PR_NUMBER);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
 export function getGitHubContext(): GitHubContext | null {
   const repository = process.env.GITHUB_REPOSITORY;
   if (!repository || !repository.includes('/')) {
@@ -12,28 +26,16 @@ export function getGitHubContext(): GitHubContext | null {
   }
   const [owner, repo] = repository.split('/');
 
-  let prNumber: number | undefined;
-  const refName = process.env.GITHUB_REF ?? '';
-  const prMatch = refName.match(/^refs\/pull\/(\d+)\//);
-  if (prMatch) {
-    prNumber = Number(prMatch[1]);
-  } else if (process.env.PR_NUMBER) {
-    const parsed = Number(process.env.PR_NUMBER);
-    if (!Number.isNaN(parsed)) {
-      prNumber = parsed;
-    }
-  }
-
   return {
     owner,
     repo,
-    prNumber,
+    prNumber: getPullRequestNumber(),
     sha: process.env.GITHUB_SHA,
   };
 }
 
 export function isPullRequestContext(): boolean {
-  return getGitHubContext()?.prNumber !== undefined;
+  return getPullRequestNumber() !== undefined;
 }
 
 export function parseOwnerRepoFromRemote(

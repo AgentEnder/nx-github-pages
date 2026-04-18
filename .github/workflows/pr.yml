@@ -43,5 +43,4 @@ jobs:
         run: npx nx deploy docs-site
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
           DOCS_BASE_URL: /nx-github-pages/pr/${{ github.event.number }}/

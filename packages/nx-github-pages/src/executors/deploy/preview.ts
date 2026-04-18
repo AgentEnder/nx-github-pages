@@ -6,10 +6,12 @@ import { join } from 'path';
 import { exec } from '../../utils/exec';
 import {
   getGitHubContext,
+  getPullRequestNumber,
   parseOwnerRepoFromRemote,
 } from '../../utils/github-context';
 import { upsertPreviewComment } from '../../utils/preview-comment';
 import { assertBaseUrlInBundle } from '../../utils/verify-base-url';
+import { assertNoRootLinks } from '../../utils/verify-no-root-links';
 import { DeployExecutorSchema, PreviewOptions } from './schema';
 
 export interface NormalizedDeployOptions
@@ -22,12 +24,11 @@ function resolvePathPrefix(explicit: string | undefined): string {
   if (explicit) {
     return explicit.replace(/^\/+|\/+$/g, '');
   }
-  const prNumber = process.env.PR_NUMBER;
-  const sha = process.env.GITHUB_SHA;
-  const id = prNumber || sha;
+  const prNumber = getPullRequestNumber();
+  const id = prNumber !== undefined ? String(prNumber) : process.env.GITHUB_SHA;
   if (!id) {
     throw new Error(
-      'Unable to determine preview path prefix: set PR_NUMBER or GITHUB_SHA, or provide preview.pathPrefix explicitly.'
+      'Unable to determine preview path prefix: set GITHUB_REF (refs/pull/<N>/merge), PR_NUMBER, or GITHUB_SHA, or provide preview.pathPrefix explicitly.'
     );
   }
   return `pr/${id}`;
@@ -94,6 +95,9 @@ export async function deployPreview(
   // Fail fast if the built bundle doesn't reference the preview path prefix.
   // Without a matching BASE_URL, every asset 404s after deployment.
   assertBaseUrlInBundle(sourceDirectory, pathPrefix);
+  // And catch the sneakier case: the bundle *mostly* uses the prefix, but a
+  // hand-rolled `<link href="/...">` or `<script src="/...">` slipped through.
+  assertNoRootLinks(sourceDirectory, pathPrefix);
 
   const scratch = mkdtempSync(join(tmpdir(), 'nx-ghp-preview-'));
   try {
