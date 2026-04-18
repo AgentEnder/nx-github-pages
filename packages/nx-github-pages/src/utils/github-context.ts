@@ -8,6 +8,15 @@ export interface GitHubContext {
 }
 
 export function getPullRequestNumber(): number | undefined {
+  // Explicit PR_NUMBER wins over auto-detected sources so callers (CI scripts,
+  // e2e fixtures) can pin it even when the surrounding runner already set
+  // GITHUB_REF / GITHUB_EVENT_PATH to a different PR.
+  if (process.env.PR_NUMBER) {
+    const parsed = Number(process.env.PR_NUMBER);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
   const ctx = new Context();
   const payloadPr = ctx.payload.pull_request?.number;
   if (typeof payloadPr === 'number' && !Number.isNaN(payloadPr)) {
@@ -16,12 +25,6 @@ export function getPullRequestNumber(): number | undefined {
   const refMatch = ctx.ref?.match(/^refs\/pull\/(\d+)\//);
   if (refMatch) {
     return Number(refMatch[1]);
-  }
-  if (process.env.PR_NUMBER) {
-    const parsed = Number(process.env.PR_NUMBER);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
   }
   return undefined;
 }
