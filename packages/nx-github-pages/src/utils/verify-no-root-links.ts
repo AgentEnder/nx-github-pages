@@ -4,7 +4,7 @@ import { join, relative } from 'path';
 
 import { logger } from '@nx/devkit';
 
-import { SKIP_ENV_VAR } from './verify-base-url';
+export const SKIP_ENV_VAR = 'NX_GITHUB_PAGES_SKIP_BASE_URL_CHECK';
 
 const MAX_FILES = 500;
 const MAX_BYTES_PER_FILE = 10 * 1024 * 1024;
@@ -52,12 +52,21 @@ export interface RootLinkOffense {
 // but not //" cleanly enough to stay readable across flavors.
 const LINK_ATTR_RE = /\b(href|src|action)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
 
-export function findRootLinksMissingPrefix(
+export function normalizeBasePath(basePath: string): string {
+  // Collapse the base path to "/<…>" — no trailing slash. Comparisons use
+  // `${base}/` or equal `${base}` so the comparison stays unambiguous.
+  const trimmed = basePath.replace(/^\/+|\/+$/g, '');
+  return trimmed ? `/${trimmed}` : '/';
+}
+
+export function findRootLinksOutsideBase(
   directory: string,
-  pathPrefix: string
+  basePath: string
 ): RootLinkOffense[] {
-  const prefix = pathPrefix.replace(/^\/+|\/+$/g, '');
-  if (!prefix) return [];
+  const base = normalizeBasePath(basePath);
+  // A base of "/" means the site is served from the domain root; every
+  // rooted link is by definition within it, so nothing to flag.
+  if (base === '/') return [];
 
   const offenses: RootLinkOffense[] = [];
   let scanned = 0;
@@ -72,10 +81,10 @@ export function findRootLinksMissingPrefix(
       const attribute = match[1].toLowerCase();
       const value = match[2] ?? match[3] ?? '';
       if (!value.startsWith('/')) continue;
-      // protocol-relative (`//cdn.example.com/...`) is not a root-path link
+      // protocol-relative (`//cdn.example.com/...`) is not a root-path link.
       if (value.startsWith('//')) continue;
-      // already prefixed? `/pr/42` or `/pr/42/...`
-      if (value === `/${prefix}` || value.startsWith(`/${prefix}/`)) continue;
+      // Rooted and within the expected base — fine.
+      if (value === base || value.startsWith(`${base}/`)) continue;
       offenses.push({
         file: relative(directory, file) || file,
         attribute,
@@ -86,21 +95,21 @@ export function findRootLinksMissingPrefix(
   return offenses;
 }
 
-export function assertNoRootLinks(
+export function assertNoRootLinksOutsideBase(
   directory: string,
-  pathPrefix: string
+  basePath: string
 ): void {
   if (process.env[SKIP_ENV_VAR] === 'true') {
     logger.warn(
-      `Skipping root-link check because ${SKIP_ENV_VAR}=true was set.`
+      `Skipping preview base URL check because ${SKIP_ENV_VAR}=true was set.`
     );
     return;
   }
 
-  const offenses = findRootLinksMissingPrefix(directory, pathPrefix);
+  const offenses = findRootLinksOutsideBase(directory, basePath);
   if (offenses.length === 0) return;
 
-  const prefix = '/' + pathPrefix.replace(/^\/+|\/+$/g, '');
+  const base = normalizeBasePath(basePath);
   const sample = offenses.slice(0, MAX_REPORTED);
   const list = sample
     .map((o) => `  - ${o.file}: ${o.attribute}="${o.url}"`)
@@ -112,17 +121,17 @@ export function assertNoRootLinks(
 
   throw new Error(
     [
-      `Preview deploy root-link check failed.`,
+      `Preview deploy base URL check failed.`,
       ``,
-      `Found ${offenses.length} link(s) in the build output that point at the site root ("/...")`,
-      `instead of the preview path "${prefix}/". Those links will 404 once the preview is deployed`,
-      `to a subdirectory.`,
+      `Found ${offenses.length} link(s) in the build output that target the site root`,
+      `instead of the preview base "${base}/". Those links will 404 once the preview is`,
+      `deployed to a subdirectory.`,
       ``,
       `Examples:`,
       list + extra,
       ``,
-      `Fix: rebuild with your framework's base URL set to "${prefix}/" so emitted links include the prefix.`,
-      `To bypass this check (not recommended) set ${SKIP_ENV_VAR}=true.`,
+      `Fix: rebuild with your framework's base URL set to "${base}/" so emitted links`,
+      `include the prefix. To bypass this check (not recommended) set ${SKIP_ENV_VAR}=true.`,
     ].join('\n')
   );
 }

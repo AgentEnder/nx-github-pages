@@ -10,8 +10,7 @@ import {
   parseOwnerRepoFromRemote,
 } from '../../utils/github-context';
 import { upsertPreviewComment } from '../../utils/preview-comment';
-import { assertBaseUrlInBundle } from '../../utils/verify-base-url';
-import { assertNoRootLinks } from '../../utils/verify-no-root-links';
+import { assertNoRootLinksOutsideBase } from '../../utils/verify-no-root-links';
 import { DeployExecutorSchema, PreviewOptions } from './schema';
 
 export interface NormalizedDeployOptions
@@ -55,6 +54,24 @@ function resolvePreviewUrl(
   return null;
 }
 
+function basePathFromPreviewUrl(
+  url: string | null,
+  pathPrefix: string
+): string {
+  // When we have a concrete preview URL (custom domain, default gh-pages
+  // URL, explicit preview.url), the base path is its pathname — e.g.
+  // `/<repo>/<pathPrefix>`. Without one we can still enforce at least
+  // `/<pathPrefix>`.
+  if (url) {
+    try {
+      return new URL(url).pathname.replace(/\/+$/, '') || `/${pathPrefix}`;
+    } catch {
+      /* fall through */
+    }
+  }
+  return `/${pathPrefix}`;
+}
+
 async function configureGitUser(
   cwd: string,
   options: NormalizedDeployOptions
@@ -92,12 +109,16 @@ export async function deployPreview(
     `Preview deploy: pushing to ${remote}@${baseBranch} under '${pathPrefix}'`
   );
 
-  // Fail fast if the built bundle doesn't reference the preview path prefix.
-  // Without a matching BASE_URL, every asset 404s after deployment.
-  assertBaseUrlInBundle(sourceDirectory, pathPrefix);
-  // And catch the sneakier case: the bundle *mostly* uses the prefix, but a
-  // hand-rolled `<link href="/...">` or `<script src="/...">` slipped through.
-  assertNoRootLinks(sourceDirectory, pathPrefix);
+  // Fail fast if any rooted link in the build output points outside the
+  // preview's base path — those will 404 once served from a subdirectory.
+  // The expected base path is derived from the full preview URL when one
+  // is available (so e.g. `/<repo>/<pathPrefix>` under the default github.io
+  // URL is enforced too), otherwise just `/<pathPrefix>`.
+  const previewUrl = resolvePreviewUrl(preview, pathPrefix, options, remote);
+  assertNoRootLinksOutsideBase(
+    sourceDirectory,
+    basePathFromPreviewUrl(previewUrl, pathPrefix)
+  );
 
   const scratch = mkdtempSync(join(tmpdir(), 'nx-ghp-preview-'));
   try {
@@ -165,7 +186,7 @@ export async function deployPreview(
       const owner = ghContext?.owner ?? fallback?.owner;
       const repo = ghContext?.repo ?? fallback?.repo;
       const prNumber = ghContext?.prNumber;
-      const url = resolvePreviewUrl(preview, pathPrefix, options, remote);
+      const url = previewUrl;
 
       if (!owner || !repo) {
         logger.warn(
