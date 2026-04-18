@@ -118,12 +118,6 @@ The executor auto-detects context from standard GitHub Actions environment varia
 | `GITHUB_SHA`        | Actions runner               | Included in the PR comment; fallback path prefix. |
 | `GH_TOKEN`          | `secrets.GITHUB_TOKEN` or PAT | Auth for `git push` **and** the Octokit comment.  |
 
-For the PR comment to work, install `@octokit/rest` in your workspace. It's declared as an optional peer dependency of the plugin:
-
-```bash
-npm install --save-dev @octokit/rest
-```
-
 ### Example GitHub Actions workflow
 
 ```yaml

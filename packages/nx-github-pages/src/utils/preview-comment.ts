@@ -1,4 +1,5 @@
 import { logger } from '@nx/devkit';
+import { Octokit } from '@octokit/rest';
 
 const PREVIEW_MARKER = '<!-- nx-github-pages:preview-deployment -->';
 
@@ -39,29 +40,12 @@ function renderCleanupBody(): string {
   ].join('\n');
 }
 
-async function loadOctokit(): Promise<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  { Octokit: new (opts: { auth?: string }) => any } | null
-> {
-  try {
-    // Resolved at runtime — @octokit/rest is a peer/optional dep of the plugin.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('@octokit/rest');
-  } catch {
-    logger.warn(
-      'Failed to load @octokit/rest — install it as a dependency of your workspace to enable PR preview comments.'
-    );
-    return null;
-  }
-}
-
 function getToken(): string | undefined {
   return process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
 }
 
 async function findPreviewComment(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: any,
+  client: Octokit,
   owner: string,
   repo: string,
   prNumber: number
@@ -73,8 +57,7 @@ async function findPreviewComment(
     per_page: 100,
   });
   return data.find(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (c: any) =>
+    (c) =>
       c.body?.includes(PREVIEW_MARKER) ||
       c.body?.toLowerCase().includes('preview deployment')
   );
@@ -90,10 +73,8 @@ export async function upsertPreviewComment(
     );
     return;
   }
-  const mod = await loadOctokit();
-  if (!mod) return;
 
-  const client = new mod.Octokit({ auth: token });
+  const client = new Octokit({ auth: token });
   const body = renderBody(input);
 
   const existing = await findPreviewComment(
@@ -128,9 +109,7 @@ export async function markPreviewCommentCleaned(
 ): Promise<void> {
   const token = getToken();
   if (!token) return;
-  const mod = await loadOctokit();
-  if (!mod) return;
-  const client = new mod.Octokit({ auth: token });
+  const client = new Octokit({ auth: token });
   const existing = await findPreviewComment(client, owner, repo, prNumber);
   if (!existing) return;
   await client.rest.issues.updateComment({
