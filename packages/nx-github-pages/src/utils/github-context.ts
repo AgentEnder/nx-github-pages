@@ -1,3 +1,5 @@
+import { Context } from '@actions/github/lib/context';
+
 export interface GitHubContext {
   owner: string;
   repo: string;
@@ -6,7 +8,12 @@ export interface GitHubContext {
 }
 
 export function getPullRequestNumber(): number | undefined {
-  const refMatch = (process.env.GITHUB_REF ?? '').match(/^refs\/pull\/(\d+)\//);
+  const ctx = new Context();
+  const payloadPr = ctx.payload.pull_request?.number;
+  if (typeof payloadPr === 'number' && !Number.isNaN(payloadPr)) {
+    return payloadPr;
+  }
+  const refMatch = ctx.ref?.match(/^refs\/pull\/(\d+)\//);
   if (refMatch) {
     return Number(refMatch[1]);
   }
@@ -20,17 +27,22 @@ export function getPullRequestNumber(): number | undefined {
 }
 
 export function getGitHubContext(): GitHubContext | null {
-  const repository = process.env.GITHUB_REPOSITORY;
-  if (!repository || !repository.includes('/')) {
+  const ctx = new Context();
+  let owner: string;
+  let repo: string;
+  try {
+    ({ owner, repo } = ctx.repo);
+  } catch {
+    // context.repo throws when GITHUB_REPOSITORY is unset and no repo info is
+    // present on the payload. Treat that as "no context" instead of surfacing
+    // the error.
     return null;
   }
-  const [owner, repo] = repository.split('/');
-
   return {
     owner,
     repo,
     prNumber: getPullRequestNumber(),
-    sha: process.env.GITHUB_SHA,
+    sha: ctx.sha || undefined,
   };
 }
 

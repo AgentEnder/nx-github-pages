@@ -13,6 +13,7 @@
     "packages/*"
   ],
   "dependencies": {
+    "@actions/github": "^6.0.0",
     "@nx/devkit": "22.6.1",
     "@octokit/rest": "^21.0.0",
     "enquirer": "^2.4.1",
