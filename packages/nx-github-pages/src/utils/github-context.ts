@@ -32,6 +32,10 @@ export function getGitHubContext(): GitHubContext | null {
   };
 }
 
+export function isPullRequestContext(): boolean {
+  return getGitHubContext()?.prNumber !== undefined;
+}
+
 export function parseOwnerRepoFromRemote(
   remote: string
 ): { owner: string; repo: string } | null {

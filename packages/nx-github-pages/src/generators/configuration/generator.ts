@@ -50,20 +50,16 @@ export async function configurationGenerator(
     executor: `nx-github-pages:deploy`,
     options: {
       ...(options.user ? { user: options.user } : {}),
+      ...(options.preview
+        ? {
+            preview: {
+              ...(options.previewUrl ? { url: options.previewUrl } : {}),
+            },
+            syncWithBaseBranch: true,
+          }
+        : {}),
     },
   };
-
-  if (options.preview) {
-    targetDefinition.configurations = {
-      ...targetDefinition.configurations,
-      preview: {
-        preview: {
-          ...(options.previewUrl ? { url: options.previewUrl } : {}),
-        },
-        syncWithBaseBranch: true,
-      },
-    };
-  }
 
   try {
     findDefaultBuildDirectory({

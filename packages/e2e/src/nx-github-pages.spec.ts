@@ -78,7 +78,7 @@ describe('nx-github-pages', () => {
     };
 
     runCommand(
-      `npx nx deploy ${nxProjectName} -c preview --no-interactive`,
+      `npx nx deploy ${nxProjectName} --no-interactive`,
       projectDirectory,
       { env: { ...process.env, ...previewEnv } }
     );
@@ -126,7 +126,7 @@ describe('nx-github-pages', () => {
       null;
     try {
       execSync(
-        `npx nx deploy ${nxProjectName} -c preview --no-interactive`,
+        `npx nx deploy ${nxProjectName} --no-interactive`,
         {
           cwd: projectDirectory,
           stdio: 'pipe',

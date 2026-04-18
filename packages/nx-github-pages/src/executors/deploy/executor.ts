@@ -9,6 +9,7 @@ import { deployPreview } from './preview';
 import { findDefaultBuildDirectory } from '../../utils/find-default-build-directory';
 import { exec } from '../../utils/exec';
 import { findDefaultRemote } from '../../utils/find-default-remote';
+import { isPullRequestContext } from '../../utils/github-context';
 
 async function normalizeOptions(
   options: DeployExecutorSchema,
@@ -76,7 +77,7 @@ export default async function deployExecutor(
     };
   }
 
-  if (options.preview) {
+  if (options.preview && isPullRequestContext()) {
     try {
       return await deployPreview(options.preview, options, directory);
     } catch (err) {
@@ -87,6 +88,12 @@ export default async function deployExecutor(
       );
       return { success: false };
     }
+  }
+
+  if (options.preview) {
+    logger.info(
+      'Preview options configured but no pull request context detected — running a standard deploy.'
+    );
   }
 
   if (options.CNAME) {

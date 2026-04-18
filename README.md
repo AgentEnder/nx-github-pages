@@ -31,7 +31,7 @@ nx run <project-name>:deploy
 
 ## Pull Request Preview Deployments
 
-The `deploy` executor can also publish a pull request preview into a subdirectory of your `gh-pages` branch (e.g. `https://<you>.github.io/<repo>/pr/123/`) and post an updating comment on the pull request with the preview URL. A companion `cleanup-preview` executor removes stale previews on a schedule.
+The `deploy` executor can also publish a pull request preview into a subdirectory of your `gh-pages` branch (e.g. `https://<you>.github.io/<repo>/pr/123/`) and post an updating comment on the pull request with the preview URL. The same `deploy` target handles both modes — it auto-detects a PR context from the environment (`GITHUB_REF=refs/pull/<N>/merge` or `PR_NUMBER`) and switches to preview mode when one is present. A companion `cleanup-preview` executor removes stale previews on a schedule.
 
 ### Generate a preview-enabled target
 
@@ -49,12 +49,10 @@ This creates two things on the project:
 {
   "deploy": {
     "executor": "nx-github-pages:deploy",
-    "options": { /* ...production options... */ },
-    "configurations": {
-      "preview": {
-        "preview": { "url": "https://<you>.github.io/<repo>" },
-        "syncWithBaseBranch": true
-      }
+    "options": {
+      "preview": { "url": "https://<you>.github.io/<repo>" },
+      "syncWithBaseBranch": true
+      /* ...any other deploy options... */
     }
   },
   "cleanup-previews": {
@@ -63,6 +61,8 @@ This creates two things on the project:
   }
 }
 ```
+
+`syncWithBaseBranch` is enabled when `--preview` is passed so that non-PR deploys merge into `gh-pages` rather than force-pushing — that preserves the `pr/*` subdirectories published by previous preview runs.
 
 ### Preview executor options
 
@@ -74,7 +74,7 @@ All standard `deploy` options still apply. Preview-specific options live under a
 | `preview.url`         | Derived from `CNAME` or `https://<owner>.github.io/<repo>` | Base URL used in the PR comment. The `pathPrefix` is appended automatically.    |
 | `preview.comment`     | `true`                                                     | Whether to upsert a PR comment with the preview link via the GitHub REST API.   |
 
-When preview mode is active the executor **clones** the target branch, copies the build output into `<pathPrefix>/`, and pushes without force — so sibling PR folders are preserved.
+When the executor detects a PR context, it switches into preview mode: it **clones** the target branch, copies the build output into `<pathPrefix>/`, and pushes without force — so sibling PR folders are preserved. Outside of a PR (e.g. a push to `main`), the same target runs a standard deploy instead.
 
 ### ⚠️ Your build MUST use a matching base URL
 
@@ -98,10 +98,10 @@ npx nx build my-app -- --base-href="$PATH_PREFIX/"
 npx nx build my-app -- --base="$PATH_PREFIX"
 ```
 
-Then deploy with the preview configuration:
+Then deploy as usual — preview mode is selected automatically when `GITHUB_REF`/`PR_NUMBER` indicate a pull request:
 
 ```bash
-npx nx deploy my-app -c preview
+npx nx deploy my-app
 ```
 
 If you serve previews through a CDN rewrite or some other scheme where the prefix legitimately does not appear in the built files, bypass the check with `NX_GITHUB_PAGES_SKIP_BASE_URL_CHECK=true`.
@@ -113,8 +113,8 @@ The executor auto-detects context from standard GitHub Actions environment varia
 | Variable            | Source                       | Purpose                                           |
 | ------------------- | ---------------------------- | ------------------------------------------------- |
 | `GITHUB_REPOSITORY` | Actions runner               | Owner/repo for the PR comment.                    |
-| `GITHUB_REF`        | Actions runner               | Extracts the PR number from `refs/pull/<N>/merge`. |
-| `PR_NUMBER`         | Set it yourself              | Fallback for PR number; used in `pathPrefix`.     |
+| `GITHUB_REF`        | Actions runner               | Extracts the PR number from `refs/pull/<N>/merge`. Presence of a PR number activates preview mode. |
+| `PR_NUMBER`         | Set it yourself              | Fallback for PR number; used in `pathPrefix`. Presence activates preview mode. |
 | `GITHUB_SHA`        | Actions runner               | Included in the PR comment; fallback path prefix. |
 | `GH_TOKEN`          | `secrets.GITHUB_TOKEN` or PAT | Auth for `git push` **and** the Octokit comment.  |
 
@@ -154,7 +154,7 @@ jobs:
           PATH_PREFIX: /pr/${{ github.event.number }}
 
       - name: Deploy preview
-        run: npx nx deploy my-app -c preview
+        run: npx nx deploy my-app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.number }}

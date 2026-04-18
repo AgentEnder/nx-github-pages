@@ -36,7 +36,7 @@
     },
     "preview": {
       "type": "boolean",
-      "description": "Add a `preview` configuration to the deploy target that deploys into a PR subdirectory and comments on the pull request.",
+      "description": "Configure the deploy target for PR preview deployments. The executor auto-detects pull request context at runtime, so the same `deploy` target publishes a normal release outside of PRs and a `pr/<N>` preview when running in a PR.",
       "default": false
     },
     "previewUrl": {
