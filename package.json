@@ -46,7 +46,13 @@
     "minimatch": "^10.0.0",
     "lodash": "^4.17.22",
     "ajv": "^8.18.0",
-    "serialize-javascript": "^7.0.3"
+    "serialize-javascript": "^7.0.3",
+    "eslint": {
+      "ajv": "^6.12.4"
+    },
+    "@eslint/eslintrc": {
+      "ajv": "^6.12.4"
+    }
   },
   "type": "commonjs",
   "main": "./src/index.js",
