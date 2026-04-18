@@ -101,6 +101,20 @@ describe('verify-no-root-links', () => {
     expect(findRootLinksOutsideBase(dir, '/pr/42')).toEqual([]);
   });
 
+  it('ignores the <base> tag — it declares the document base, not a link', () => {
+    writeFileSync(
+      join(dir, 'index.html'),
+      [
+        '<!doctype html>',
+        '<html><head>',
+        '<base href="/" />',
+        '<script type="module" src="/pr/42/assets/main.js"></script>',
+        '</head></html>',
+      ].join('\n')
+    );
+    expect(findRootLinksOutsideBase(dir, '/pr/42')).toEqual([]);
+  });
+
   it('walks nested directories and aggregates offenses', () => {
     mkdirSync(join(dir, 'nested'), { recursive: true });
     writeFileSync(join(dir, 'index.html'), '<a href="/top">top</a>');

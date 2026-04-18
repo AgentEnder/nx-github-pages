@@ -47,10 +47,13 @@ export interface RootLinkOffense {
   url: string;
 }
 
-// Matches href/src/action attributes across HTML. Values are captured
-// verbatim and filtered in JS — regex alone can't express "starts with /
-// but not //" cleanly enough to stay readable across flavors.
-const LINK_ATTR_RE = /\b(href|src|action)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+// Matches href/src/action attributes on link-style tags. `<base>` is
+// intentionally excluded — it declares the document base URL rather than
+// emitting a link, and frameworks commonly leave its `href="/"` in place
+// even when `<script src>`/`<link href>` are rewritten for a subpath.
+const LINK_ATTR_RE =
+  /<([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*?)\s(href|src|action)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+const EXCLUDED_TAGS = new Set(['base']);
 
 export function normalizeBasePath(basePath: string): string {
   // Collapse the base path to "/<…>" — no trailing slash. Comparisons use
@@ -83,8 +86,10 @@ export function findRootLinksOutsideBase(
     LINK_ATTR_RE.lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = LINK_ATTR_RE.exec(content)) !== null) {
-      const attribute = match[1].toLowerCase();
-      const value = match[2] ?? match[3] ?? '';
+      const tag = match[1].toLowerCase();
+      if (EXCLUDED_TAGS.has(tag)) continue;
+      const attribute = match[3].toLowerCase();
+      const value = match[4] ?? match[5] ?? '';
       if (!value.startsWith('/')) continue;
       // protocol-relative (`//cdn.example.com/...`) is not a root-path link.
       if (value.startsWith('//')) continue;
