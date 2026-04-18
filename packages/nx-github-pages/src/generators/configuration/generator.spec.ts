@@ -50,7 +50,7 @@ describe('configuration generator', () => {
     );
   });
 
-  it('adds the deploy target to a package.json-inferred project (Nx 22+)', async () => {
+  it('writes a project.json for package.json-inferred projects so Nx picks up the new target', async () => {
     // Simulate an app whose project config lives in package.json (no project.json).
     tree.write(
       'apps/app/package.json',
@@ -62,19 +62,19 @@ describe('configuration generator', () => {
       targetName: 'deploy',
     });
 
-    // The target must be present on the read-back configuration — regardless of
-    // whether it landed in project.json or package.json's nx block, `nx deploy
-    // @org/app` needs to resolve it.
     const config = readProjectConfiguration(tree, '@org/app');
     expect(config.targets?.deploy).toEqual(
       expect.objectContaining({ executor: 'nx-github-pages:deploy' })
     );
 
-    // And it should not have stomped the project.json/package.json of a
-    // project with a similar directory-derived name.
-    expect(tree.exists('apps/app/project.json')).toBe(false);
-    const pkg = JSON.parse(tree.read('apps/app/package.json', 'utf-8') ?? '{}');
-    expect(pkg.nx?.targets?.deploy?.executor).toBe('nx-github-pages:deploy');
+    // A project.json is written on disk — the Nx daemon invalidates its graph
+    // cache on project.json changes, but not on package.json nx-block edits.
+    expect(tree.exists('apps/app/project.json')).toBe(true);
+    const projectJson = JSON.parse(
+      tree.read('apps/app/project.json', 'utf-8') ?? '{}'
+    );
+    expect(projectJson.name).toBe('@org/app');
+    expect(projectJson.targets?.deploy?.executor).toBe('nx-github-pages:deploy');
   });
 
   it('adds a cleanup-previews target when addCleanupTarget is passed', async () => {

@@ -1,4 +1,5 @@
 import {
+  addProjectConfiguration,
   createProjectGraphAsync,
   readProjectConfiguration,
   TargetConfiguration,
@@ -19,11 +20,8 @@ export async function configurationGenerator(
   options: ConfigurationGeneratorSchema
 ) {
   const graph = await createProjectGraphAsync();
-
-  // readProjectConfiguration works for both project.json-backed projects and
-  // package.json-inferred ones (Nx 22+); updateProjectConfiguration writes
-  // back to whichever file the project is defined in.
   const project = readProjectConfiguration(tree, options.project);
+  const hasProjectJson = tree.exists(`${project.root}/project.json`);
 
   const targetDefinition: TargetConfiguration<Partial<DeployExecutorSchema>> = {
     executor: `nx-github-pages:deploy`,
@@ -83,14 +81,44 @@ export async function configurationGenerator(
     };
   }
 
-  updateProjectConfiguration(tree, options.project, {
-    ...project,
-    targets: {
-      ...project.targets,
-      [options.targetName]: targetDefinition,
-      ...extraTargets,
-    },
-  });
+  const newTargets = {
+    ...project.targets,
+    [options.targetName]: targetDefinition,
+    ...extraTargets,
+  };
+
+  if (hasProjectJson) {
+    updateProjectConfiguration(tree, options.project, {
+      ...project,
+      targets: newTargets,
+    });
+  } else {
+    // For package.json-inferred projects (Nx 22+), write a project.json
+    // rather than mutating the package.json `nx` block. The Nx daemon picks
+    // up project.json files via its file watcher; mid-session edits to the
+    // package.json nx block are not as reliably reflected.
+    addProjectConfiguration(tree, options.project, {
+      name: options.project,
+      root: project.root,
+      targets: newTargets,
+    });
+  }
+
+  // Return a post-flush callback so the daemon only gets nudged after our
+  // changes actually hit disk. Without this, the next `nx deploy` in the
+  // same session can still resolve the task graph (via dependsOn) but fail
+  // with "Cannot find target 'deploy'" when the per-task child process
+  // reads the cached project graph.
+  return async () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { daemonClient } = require('nx/src/daemon/client/client');
+      await daemonClient.stop();
+    } catch {
+      // Daemon may not be running or the internal path may have moved —
+      // either way we'd rather let the generator succeed.
+    }
+  };
 }
 
 export default configurationGenerator;
