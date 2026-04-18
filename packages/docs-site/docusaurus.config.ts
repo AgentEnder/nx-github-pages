@@ -14,7 +14,9 @@ const config: Config = {
   url: 'https://craigory.dev',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: 'nx-github-pages',
+  // In CI, the PR preview workflow overrides this via DOCS_BASE_URL so built
+  // assets resolve under /<repo>/pr/<N>/.
+  baseUrl: process.env.DOCS_BASE_URL ?? 'nx-github-pages',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.

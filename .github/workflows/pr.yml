@@ -8,10 +8,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Git User
+        run: |
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -28,3 +38,10 @@ jobs:
 
       - name: Run tests
         run: npx nx run-many -t build,test,lint,e2e
+
+      - name: Deploy docs-site preview
+        run: npx nx deploy docs-site
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+          DOCS_BASE_URL: /nx-github-pages/pr/${{ github.event.number }}/
