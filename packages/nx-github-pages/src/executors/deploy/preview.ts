@@ -6,10 +6,11 @@ import { join } from 'path';
 import { exec } from '../../utils/exec';
 import {
   getGitHubContext,
+  getPullRequestNumber,
   parseOwnerRepoFromRemote,
 } from '../../utils/github-context';
 import { upsertPreviewComment } from '../../utils/preview-comment';
-import { assertBaseUrlInBundle } from '../../utils/verify-base-url';
+import { assertNoRootLinksOutsideBase } from '../../utils/verify-no-root-links';
 import { DeployExecutorSchema, PreviewOptions } from './schema';
 
 export interface NormalizedDeployOptions
@@ -18,16 +19,27 @@ export interface NormalizedDeployOptions
   directory: string;
 }
 
+const TEMPLATE_RE = /\{[a-zA-Z][a-zA-Z0-9_]*\}/;
+
+function expandTemplate(template: string): string {
+  const prNumber = getPullRequestNumber();
+  const sha = process.env.GITHUB_SHA;
+  const shortSha = sha ? sha.slice(0, 7) : '';
+  return template
+    .replace(/\{prNumber\}/g, prNumber !== undefined ? String(prNumber) : '')
+    .replace(/\{shortSha\}/g, shortSha)
+    .replace(/\{sha\}/g, sha ?? '');
+}
+
 function resolvePathPrefix(explicit: string | undefined): string {
   if (explicit) {
-    return explicit.replace(/^\/+|\/+$/g, '');
+    return expandTemplate(explicit).replace(/^\/+|\/+$/g, '');
   }
-  const prNumber = process.env.PR_NUMBER;
-  const sha = process.env.GITHUB_SHA;
-  const id = prNumber || sha;
+  const prNumber = getPullRequestNumber();
+  const id = prNumber !== undefined ? String(prNumber) : process.env.GITHUB_SHA;
   if (!id) {
     throw new Error(
-      'Unable to determine preview path prefix: set PR_NUMBER or GITHUB_SHA, or provide preview.pathPrefix explicitly.'
+      'Unable to determine preview path prefix: set GITHUB_REF (refs/pull/<N>/merge), PR_NUMBER, or GITHUB_SHA, or provide preview.pathPrefix explicitly.'
     );
   }
   return `pr/${id}`;
@@ -39,9 +51,14 @@ function resolvePreviewUrl(
   options: NormalizedDeployOptions,
   remote: string
 ): string | null {
-  const trimmed = (preview.url ?? '').replace(/\/+$/, '');
-  if (trimmed) {
-    return `${trimmed}/${pathPrefix}`;
+  const rawUrl = preview.url;
+  if (rawUrl) {
+    const hasTemplate = TEMPLATE_RE.test(rawUrl);
+    const expanded = expandTemplate(rawUrl).replace(/\/+$/, '');
+    // If the user templated the URL (e.g. `https://previews.foo.com/{prNumber}`),
+    // treat the expansion as the complete preview URL. Otherwise treat it as a
+    // base and append the pathPrefix.
+    return hasTemplate ? expanded : `${expanded}/${pathPrefix}`;
   }
   if (options.CNAME) {
     return `https://${options.CNAME}/${pathPrefix}`;
@@ -52,6 +69,32 @@ function resolvePreviewUrl(
     return `https://${parsed.owner}.github.io/${parsed.repo}/${pathPrefix}`;
   }
   return null;
+}
+
+function deriveAcceptableBasePaths(
+  previewUrl: string | null,
+  pathPrefix: string,
+  remote: string
+): string[] {
+  const bases = new Set<string>();
+  // Custom-domain / CNAME form — content served from the root of the host.
+  bases.add(`/${pathPrefix}`);
+  // Default github.io form — content served under `/<repo>/...`.
+  const parsed = parseOwnerRepoFromRemote(remote);
+  if (parsed) {
+    bases.add(`/${parsed.repo}/${pathPrefix}`);
+  }
+  // And whatever path the resolved preview URL implies (covers explicit
+  // preview.url templates pointing at a different layout entirely).
+  if (previewUrl) {
+    try {
+      const pathname = new URL(previewUrl).pathname.replace(/\/+$/, '');
+      if (pathname) bases.add(pathname);
+    } catch {
+      /* ignore malformed URL */
+    }
+  }
+  return Array.from(bases);
 }
 
 async function configureGitUser(
@@ -91,9 +134,17 @@ export async function deployPreview(
     `Preview deploy: pushing to ${remote}@${baseBranch} under '${pathPrefix}'`
   );
 
-  // Fail fast if the built bundle doesn't reference the preview path prefix.
-  // Without a matching BASE_URL, every asset 404s after deployment.
-  assertBaseUrlInBundle(sourceDirectory, pathPrefix);
+  // Fail fast if any rooted link in the build output points outside the
+  // preview's base path — those will 404 once served from a subdirectory.
+  // We accept either the bare pathPrefix (`/<pathPrefix>`, custom-domain
+  // layout) or the repo-prefixed form (`/<repo>/<pathPrefix>`, default
+  // github.io layout), so the same build is valid whether a CNAME is
+  // configured or not.
+  const previewUrl = resolvePreviewUrl(preview, pathPrefix, options, remote);
+  assertNoRootLinksOutsideBase(
+    sourceDirectory,
+    deriveAcceptableBasePaths(previewUrl, pathPrefix, remote)
+  );
 
   const scratch = mkdtempSync(join(tmpdir(), 'nx-ghp-preview-'));
   try {
@@ -161,7 +212,7 @@ export async function deployPreview(
       const owner = ghContext?.owner ?? fallback?.owner;
       const repo = ghContext?.repo ?? fallback?.repo;
       const prNumber = ghContext?.prNumber;
-      const url = resolvePreviewUrl(preview, pathPrefix, options, remote);
+      const url = previewUrl;
 
       if (!owner || !repo) {
         logger.warn(

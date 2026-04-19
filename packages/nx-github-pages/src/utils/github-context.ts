@@ -1,3 +1,5 @@
+import { Context } from '@actions/github/lib/context';
+
 export interface GitHubContext {
   owner: string;
   repo: string;
@@ -5,31 +7,50 @@ export interface GitHubContext {
   sha?: string;
 }
 
-export function getGitHubContext(): GitHubContext | null {
-  const repository = process.env.GITHUB_REPOSITORY;
-  if (!repository || !repository.includes('/')) {
-    return null;
-  }
-  const [owner, repo] = repository.split('/');
-
-  let prNumber: number | undefined;
-  const refName = process.env.GITHUB_REF ?? '';
-  const prMatch = refName.match(/^refs\/pull\/(\d+)\//);
-  if (prMatch) {
-    prNumber = Number(prMatch[1]);
-  } else if (process.env.PR_NUMBER) {
+export function getPullRequestNumber(): number | undefined {
+  // Explicit PR_NUMBER wins over auto-detected sources so callers (CI scripts,
+  // e2e fixtures) can pin it even when the surrounding runner already set
+  // GITHUB_REF / GITHUB_EVENT_PATH to a different PR.
+  if (process.env.PR_NUMBER) {
     const parsed = Number(process.env.PR_NUMBER);
     if (!Number.isNaN(parsed)) {
-      prNumber = parsed;
+      return parsed;
     }
   }
+  const ctx = new Context();
+  const payloadPr = ctx.payload.pull_request?.number;
+  if (typeof payloadPr === 'number' && !Number.isNaN(payloadPr)) {
+    return payloadPr;
+  }
+  const refMatch = ctx.ref?.match(/^refs\/pull\/(\d+)\//);
+  if (refMatch) {
+    return Number(refMatch[1]);
+  }
+  return undefined;
+}
 
+export function getGitHubContext(): GitHubContext | null {
+  const ctx = new Context();
+  let owner: string;
+  let repo: string;
+  try {
+    ({ owner, repo } = ctx.repo);
+  } catch {
+    // context.repo throws when GITHUB_REPOSITORY is unset and no repo info is
+    // present on the payload. Treat that as "no context" instead of surfacing
+    // the error.
+    return null;
+  }
   return {
     owner,
     repo,
-    prNumber,
-    sha: process.env.GITHUB_SHA,
+    prNumber: getPullRequestNumber(),
+    sha: ctx.sha || undefined,
   };
+}
+
+export function isPullRequestContext(): boolean {
+  return getPullRequestNumber() !== undefined;
 }
 
 export function parseOwnerRepoFromRemote(

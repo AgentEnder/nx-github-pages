@@ -5,6 +5,19 @@ hide_title: true
 sidebar_position: 2
 slug: /changelog
 ---
+## 1.2.1 (2026-04-11)
+
+### 🩹 Fixes
+
+- **ci:** add fetch-depth and git user to main workflow ([af0d451](https://github.com/agentender/nx-github-pages/commit/af0d451))
+- **core:** update build config ([d06bf4f](https://github.com/agentender/nx-github-pages/commit/d06bf4f))
+- **core:** use spawn instead of exec to avoid maxBuffer limitations ([566cf28](https://github.com/agentender/nx-github-pages/commit/566cf28))
+- **core:** handle spawn error event for invalid cwd ([1ac5834](https://github.com/agentender/nx-github-pages/commit/1ac5834))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.2.0 (2025-08-22)
 
 ### 🚀 Features

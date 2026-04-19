@@ -1,7 +1,6 @@
 import {
   addProjectConfiguration,
   createProjectGraphAsync,
-  ProjectGraph,
   readProjectConfiguration,
   TargetConfiguration,
   Tree,
@@ -16,54 +15,28 @@ import { findDefaultRemote } from '../../utils/find-default-remote';
 
 import { ConfigurationGeneratorSchema } from './schema';
 
-async function getProjectConfiguration(
-  project: string,
-  tree: Tree,
-  graph: ProjectGraph
-) {
-  try {
-    return { onDisk: true, project: readProjectConfiguration(tree, project) };
-  } catch {
-    // continue
-  }
-
-  const projectNode = graph.nodes[project];
-  if (!projectNode) {
-    throw new Error(`Project configuration not found for ${project}`);
-  }
-  return { onDisk: false, project: projectNode.data };
-}
-
 export async function configurationGenerator(
   tree: Tree,
   options: ConfigurationGeneratorSchema
 ) {
   const graph = await createProjectGraphAsync();
-
-  const { onDisk, project } = await getProjectConfiguration(
-    options.project,
-    tree,
-    graph
-  );
+  const project = readProjectConfiguration(tree, options.project);
+  const hasProjectJson = tree.exists(`${project.root}/project.json`);
 
   const targetDefinition: TargetConfiguration<Partial<DeployExecutorSchema>> = {
     executor: `nx-github-pages:deploy`,
     options: {
       ...(options.user ? { user: options.user } : {}),
+      ...(options.preview
+        ? {
+            preview: {
+              ...(options.previewUrl ? { url: options.previewUrl } : {}),
+            },
+            syncWithBaseBranch: true,
+          }
+        : {}),
     },
   };
-
-  if (options.preview) {
-    targetDefinition.configurations = {
-      ...targetDefinition.configurations,
-      preview: {
-        preview: {
-          ...(options.previewUrl ? { url: options.previewUrl } : {}),
-        },
-        syncWithBaseBranch: true,
-      },
-    };
-  }
 
   try {
     findDefaultBuildDirectory({
@@ -108,24 +81,44 @@ export async function configurationGenerator(
     };
   }
 
-  if (!onDisk) {
-    addProjectConfiguration(tree, options.project, {
-      root: project.root,
-      targets: {
-        [options.targetName]: targetDefinition,
-        ...extraTargets,
-      },
-    });
-  } else {
+  const newTargets = {
+    ...project.targets,
+    [options.targetName]: targetDefinition,
+    ...extraTargets,
+  };
+
+  if (hasProjectJson) {
     updateProjectConfiguration(tree, options.project, {
       ...project,
-      targets: {
-        ...project.targets,
-        [options.targetName]: targetDefinition,
-        ...extraTargets,
-      },
+      targets: newTargets,
+    });
+  } else {
+    // For package.json-inferred projects (Nx 22+), write a project.json
+    // rather than mutating the package.json `nx` block. The Nx daemon picks
+    // up project.json files via its file watcher; mid-session edits to the
+    // package.json nx block are not as reliably reflected.
+    addProjectConfiguration(tree, options.project, {
+      name: options.project,
+      root: project.root,
+      targets: newTargets,
     });
   }
+
+  // Return a post-flush callback so the daemon only gets nudged after our
+  // changes actually hit disk. Without this, the next `nx deploy` in the
+  // same session can still resolve the task graph (via dependsOn) but fail
+  // with "Cannot find target 'deploy'" when the per-task child process
+  // reads the cached project graph.
+  return async () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { daemonClient } = require('nx/src/daemon/client/client');
+      await daemonClient.stop();
+    } catch {
+      // Daemon may not be running or the internal path may have moved —
+      // either way we'd rather let the generator succeed.
+    }
+  };
 }
 
 export default configurationGenerator;

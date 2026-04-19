@@ -49,14 +49,23 @@
         ],
         "inputs": [
           "default",
-          "!{projectRoot}/.docusaurus"
+          "!{projectRoot}/.docusaurus",
+          {
+            "env": "DOCS_BASE_URL"
+          }
         ]
       },
       "deploy": {
         "executor": "nx-github-pages:deploy",
         "dependsOn": [
           "build"
-        ]
+        ],
+        "options": {
+          "preview": {
+            "url": "https://craigory.dev/nx-github-pages"
+          },
+          "syncWithBaseBranch": true
+        }
       }
     }
   }

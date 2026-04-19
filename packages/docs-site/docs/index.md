@@ -7,5 +7,5 @@ slug: /
 
 ## [nx-github-pages](./nx-github-pages)
 
-- 1 Executor
+- 2 Executors
 - 1 Generator

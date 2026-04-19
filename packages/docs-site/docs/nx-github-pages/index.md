@@ -18,3 +18,7 @@ configuration generator
 ### [deploy](./Executors/deploy.md)
 
 deploy executor
+
+### [cleanup-preview](./Executors/cleanup-preview.md)
+
+Remove stale PR preview deployments from the gh-pages branch

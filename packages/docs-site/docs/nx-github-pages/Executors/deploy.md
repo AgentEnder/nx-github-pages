@@ -42,6 +42,10 @@ Deploy a page to a specified repository&#39;s gh-pages branch.
 
 - (string): Custom domain to use for the gh-pages branch. Applied by creating a CNAME file in the root of the gh-pages branch
 
+### preview
+
+- (object): Preview deploy configuration. When set and the executor detects a pull request context (via `GITHUB_REF=refs/pull/&lt;N&gt;/merge` or `PR_NUMBER`), the build output is pushed into a subdirectory of the target branch instead of replacing it. Outside of a PR context, the executor falls back to a standard deploy.
+
 ### user
 
 - (object): User information to use when authoring deployment commit
