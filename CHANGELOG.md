@@ -1,3 +1,20 @@
+## 1.3.0 (2026-04-19)
+
+### 🚀 Features
+
+- PR preview deployments + cleanup executor ([#7](https://github.com/agentender/nx-github-pages/pull/7))
+- **deploy:** auto-detect PR context for preview deployments ([#9](https://github.com/agentender/nx-github-pages/pull/9))
+
+### 🩹 Fixes
+
+- **e2e:** read project name from generated app package.json ([6e5b6eb](https://github.com/agentender/nx-github-pages/commit/6e5b6eb))
+- **nx-guthub-pages:** tolerate missing global git user when reading config ([#8](https://github.com/agentender/nx-github-pages/pull/8))
+
+### ❤️ Thank You
+
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.2.1 (2026-04-11)
 
 ### 🩹 Fixes
