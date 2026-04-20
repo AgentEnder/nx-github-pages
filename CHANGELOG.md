@@ -1,3 +1,13 @@
+## 1.3.1 (2026-04-20)
+
+### 🩹 Fixes
+
+- default to prefer merging with ([b6007c7](https://github.com/agentender/nx-github-pages/commit/b6007c7))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.3.0 (2026-04-19)
 
 ### 🚀 Features
