@@ -41,11 +41,11 @@
     },
     "syncGitOptions": {
       "type": "array",
-      "description": "Additional git options to use when syncing the gh-pages branch with the base branch",
+      "description": "Additional git options to use when syncing the gh-pages branch with the base branch. The default prefers the freshly built files when a merge conflict occurs (`-X ours`), so a redeploy never gets blocked by stale content already on `gh-pages`.",
       "items": {
         "type": "string"
       },
-      "default": ["--allow-unrelated-histories"]
+      "default": ["--allow-unrelated-histories", "-X", "ours"]
     },
     "CNAME": {
       "type": "string",
