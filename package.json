@@ -13,18 +13,18 @@
     "packages/*"
   ],
   "dependencies": {
-    "@nx/devkit": "22.6.1",
+    "@nx/devkit": "22.6.3",
     "enquirer": "^2.4.1",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@nx-dotnet/nxdoc": "^2.4.0",
-    "@nx/eslint": "22.6.1",
-    "@nx/eslint-plugin": "22.6.1",
-    "@nx/jest": "22.6.1",
-    "@nx/js": "22.6.1",
-    "@nx/plugin": "22.6.1",
-    "@nx/workspace": "22.6.1",
+    "@nx/eslint": "22.6.3",
+    "@nx/eslint-plugin": "22.6.3",
+    "@nx/jest": "22.6.3",
+    "@nx/js": "22.6.3",
+    "@nx/plugin": "22.6.3",
+    "@nx/workspace": "22.6.3",
     "@types/jest": "30.0.0",
     "@types/node": "18.16.9",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
@@ -33,10 +33,10 @@
     "eslint-config-prettier": "10.1.8",
     "jest": "30.0.5",
     "jest-environment-jsdom": "30.0.5",
-    "nx": "22.6.1",
+    "nx": "22.6.3",
     "patch-package": "^8.0.0",
     "prettier": "^2.6.2",
-    "ts-jest": "29.4.1",
+    "ts-jest": "29.4.6",
     "ts-node": "10.9.1",
     "typescript": "5.9.3",
     "verdaccio": "6.3.2",
@@ -45,8 +45,12 @@
   "overrides": {
     "minimatch": "^10.0.0",
     "lodash": "^4.17.22",
-    "ajv": "^8.18.0",
-    "serialize-javascript": "^7.0.3",
+    "serialize-javascript": "^7.0.5",
+    "handlebars": "^4.7.9",
+    "picomatch": "^4.0.4",
+    "verdaccio": {
+      "ajv": "^8.18.0"
+    },
     "eslint": {
       "ajv": "^6.12.4"
     },
